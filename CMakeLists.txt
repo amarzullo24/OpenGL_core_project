@@ -186,18 +186,6 @@ foreach(CHAPTER ${CHAPTERS})
             resources/textures/grass.jpg
             resources/textures/metal.png
 
-            resources/objects/nanosuit/nanosuit.mtl
-            resources/objects/nanosuit/nanosuit.obj
-
-            resources/objects/planet/planet.mtl
-            resources/objects/planet/planet.obj
-
-            resources/objects/floor1/house.mtl
-            resources/objects/floor1/house.obj
-
-            resources/objects/floor2/scene.mtl
-            resources/objects/floor2/scene.obj
-
         )
 
         target_link_libraries(${DEMO} ${LIBS})
