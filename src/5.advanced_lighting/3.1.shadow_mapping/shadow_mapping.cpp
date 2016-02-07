@@ -60,6 +60,7 @@ Model* monster;
 Model* floor1;
 
 const GLfloat FLOOR1_Y = 3.5f;
+const GLfloat FLOOR_OFFSET = 1.1f;
 const int NUM_INSTANCES = 100;
 
 
@@ -290,16 +291,19 @@ void initFloor1(){
 void initGrass(){
 
     glm::vec3 translations[NUM_INSTANCES];
-    int start = NUM_INSTANCES/10;
+    int start = sqrt(NUM_INSTANCES);
     int index = 0;
-    for(GLint y = -start; y < start; y += 2)
+
+    GLfloat offset = 10.0;
+
+    for(GLint y = 0; y < start; y += 2)
     {
-        for(GLint x = -start; x < start; x += 2)
+        for(GLint x = 0; x < start; x += 2)
         {
             glm::vec3 translation;
-            translation.x = x;//(GLfloat)x + offset;
-            translation.y = 0;
-            translation.z = y;//(GLfloat)y + offset;
+            translation.x = (GLfloat)x/10 + offset;
+            translation.y = FLOOR1_Y + 0.5;
+            translation.z = (GLfloat)y/10 + offset;
             translations[index++] = translation;
         }
     }
@@ -307,6 +311,7 @@ void initGrass(){
     glGenBuffers(1, &instanceVBO);
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * NUM_INSTANCES, &translations[0], GL_STATIC_DRAW);
+
 
     GLfloat transparentVertices[] = {
         // Positions         // Texture Coords (swapped y coordinates because texture is flipped upside down)
@@ -352,7 +357,7 @@ void RenderGrass(Shader& shader){
     glEnableVertexAttribArray(3);
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
-    glVertexAttribDivisor(6, 1);
+    glVertexAttribDivisor(3, 1);
 
     //glDrawArrays(GL_TRIANGLES, 0, 6);
     glDrawArraysInstanced(GL_TRIANGLES, 0, 30, NUM_INSTANCES);
@@ -390,7 +395,7 @@ void RenderModels(Shader &shader){
 
     // Draw the loaded model
     glm::mat4 model;
-    model = glm::translate(model, glm::vec3(2.0f, FLOOR1_Y+1.1, 2.0f)); // Translate it down a bit so it's at the center of the scene
+    model = glm::translate(model, glm::vec3(2.0f, FLOOR1_Y+FLOOR_OFFSET, 2.0f)); // Translate it down a bit so it's at the center of the scene
     //model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// It's a bit too big for our scene, so scale it down
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
     floor1->Draw(shader);
