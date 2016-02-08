@@ -36,9 +36,6 @@ void RenderGrass(Shader &);
 void initFloor1();
 void initGrass();
 
-// Camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
-
 // Delta
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
@@ -61,8 +58,10 @@ Model* floor1;
 
 const GLfloat FLOOR1_Y = 3.5f;
 const GLfloat FLOOR_OFFSET = 1.1f;
-const int NUM_INSTANCES = 100;
+const int NUM_INSTANCES = 500;
 
+// Camera
+Camera camera(glm::vec3(10.0f, FLOOR1_Y + 1, 20.0f));
 
 int main()
 {
@@ -293,16 +292,14 @@ void initGrass(){
     int start = sqrt(NUM_INSTANCES);
     int index = 0;
 
-    GLfloat offset = 10.0;
-
     for(GLint y = 0; y < start; y += 2)
     {
         for(GLint x = 0; x < start; x += 2)
         {
             glm::vec3 translation;
-            translation.x = (GLfloat)x/10 + offset;
+            translation.x =  rand()%30 - 15;
             translation.y = FLOOR1_Y + 0.5;
-            translation.z = (GLfloat)y/10 + offset;
+            translation.z =  rand()%15 + 7;
             translations[index++] = translation;
         }
     }
