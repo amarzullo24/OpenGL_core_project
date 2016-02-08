@@ -16,11 +16,12 @@
 
 // Other Libs
 #include <SOIL.h>
+#include <btBulletDynamicsCommon.h>
 
 #include <string>
 
 // Properties
-const GLuint SCR_WIDTH = 800, SCR_HEIGHT = 600;
+const GLuint SCR_WIDTH = 1024, SCR_HEIGHT = 768;
 
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -47,7 +48,7 @@ GLfloat lastFrame = 0.0f;
 GLuint flameIndex = 0;
 const GLfloat FLOOR1_Y = 3.5f;
 const GLfloat FLOOR_OFFSET = 1.1f;
-const int NUM_INSTANCES = 500;
+const int NUM_INSTANCES = 100;
 const int NUM_FLAME_FRAMES = 5;
 
 // Options
@@ -67,6 +68,7 @@ GLuint flameVAO, flameVBO;
 
 Model* monster;
 Model* floor1;
+Model* grass;
 
 // Camera
 Camera camera(glm::vec3(10.0f, FLOOR1_Y + 1, 20.0f));
@@ -74,6 +76,8 @@ Camera camera(glm::vec3(10.0f, FLOOR1_Y + 1, 20.0f));
 
 int main()
 {
+    glm::mat4 m(1);
+    //bulletDetectCollision(m,m);
     // Init GLFW
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -177,6 +181,8 @@ int main()
 
     monster = new Model("resources/objects/nanosuit/nanosuit.obj");
     floor1 = new Model("resources/objects/floor1/house.obj");
+    grass = new Model("resources/objects/grass/Grass-small.obj");
+
     /*--------------------------------------------------*/
 
     initFloor1();
@@ -298,7 +304,7 @@ void initFloor1(){
     floorTexture = loadTexture("resources/textures/marble.jpg");
 }
 
-void initGrass(){
+/*void initGrass(){
 
     glm::vec3 translations[NUM_INSTANCES];
     int start = sqrt(NUM_INSTANCES);
@@ -332,8 +338,6 @@ void initGrass(){
         1.0f,  0.5f,  0.0f,  1.0f,  0.0f
     };
 
-    Model grass("resources/objects/grass/Grass-small.obj");
-
     // Setup transparent plane VAO
     glGenVertexArrays(1, &transparentVAO);
     glGenBuffers(1, &transparentVBO);
@@ -360,9 +364,9 @@ void RenderGrass(Shader& shader){
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
     // Vegetation
-    /*glBindVertexArray(transparentVAO);
+    glBindVertexArray(transparentVAO);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, transparentTexture);*/
+    glBindTexture(GL_TEXTURE_2D, transparentTexture);
 
     glEnableVertexAttribArray(3);
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
@@ -372,6 +376,76 @@ void RenderGrass(Shader& shader){
     //glDrawArrays(GL_TRIANGLES, 0, 6);
     glDrawArraysInstanced(GL_TRIANGLES, 0, 30, NUM_INSTANCES);
     glBindVertexArray(0);
+
+}*/
+
+void initGrass(){
+
+    // Generate a large list of semi-random model transformation matrices
+    GLuint NUM_INSTANCES = 50;
+    glm::mat4* modelMatrices;
+    modelMatrices = new glm::mat4[NUM_INSTANCES];
+    srand(glfwGetTime()); // initialize random seed
+    for(GLuint i = 0; i < NUM_INSTANCES; i++)
+    {
+        glm::mat4 model;
+        glm::vec3 translation;
+        translation.x =  rand()%30 - 10;
+        translation.y = FLOOR1_Y + 0.5;
+        translation.z =  rand()%6 + 10;
+        model = glm::translate(model, translation);
+        modelMatrices[i] = model;
+    }
+
+    // Set transformation matrices as an instance vertex attribute (with divisor 1)
+    // NOTE: We're cheating a little by taking the, now publicly declared, VAO of the model's mesh(es) and adding new vertexAttribPointers
+    // Normally you'd want to do this in a more organized fashion, but for learning purposes this will do.
+    for(GLuint i = 0; i < grass->meshes.size(); i++)
+    {
+        GLuint VAO = grass->meshes[i].VAO;
+        GLuint buffer;
+        glBindVertexArray(VAO);
+        glGenBuffers(1, &buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, buffer);
+        glBufferData(GL_ARRAY_BUFFER, NUM_INSTANCES * sizeof(glm::mat4), &modelMatrices[0], GL_STATIC_DRAW);
+        // Set attribute pointers for matrix (4 times vec4)
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)0);
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)(sizeof(glm::vec4)));
+        glEnableVertexAttribArray(5);
+        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)(2 * sizeof(glm::vec4)));
+        glEnableVertexAttribArray(6);
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)(3 * sizeof(glm::vec4)));
+
+        glVertexAttribDivisor(3, 1);
+        glVertexAttribDivisor(4, 1);
+        glVertexAttribDivisor(5, 1);
+        glVertexAttribDivisor(6, 1);
+
+        glBindVertexArray(0);
+    }
+
+}
+
+void RenderGrass(Shader& shader){
+
+    // Draw meteorites
+    shader.Use();
+
+    glm::mat4 model;
+    glm::mat4 view = camera.GetViewMatrix();
+    glm::mat4 projection = glm::perspective(camera.Zoom, (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+    for(GLuint i = 0; i < grass->meshes.size(); i++)
+    {
+        glBindVertexArray(grass->meshes[i].VAO);
+        glDrawElementsInstanced(GL_TRIANGLES, grass->meshes[i].vertices.size(), GL_UNSIGNED_INT, 0, NUM_INSTANCES);
+        glBindVertexArray(0);
+    }
 }
 
 void initFlame(){
@@ -421,7 +495,7 @@ void RenderFlame(Shader& shader){
     glBindTexture(GL_TEXTURE_2D, flameTexture[++flameIndex%=NUM_FLAME_FRAMES]);
     //glBindTexture(GL_TEXTURE_2D, flameTexture[0]);
 
-   /* glEnableVertexAttribArray(3);
+    /* glEnableVertexAttribArray(3);
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
     glVertexAttribDivisor(3, 1);*/

@@ -64,11 +64,11 @@ int main()
 
     // Setup and compile our shaders
     Shader planetShader("planet.vs", "planet.frag");
-    Shader instanceShader("instanced_asteroids.vs", "instanced_asteroids.frag");
+    Shader instanceShader("shaders/blending_discard.vs", "shaders/blending_discard.frag");
 
     // Load models
-    Model rock("../../../resources/objects/rock/rock.obj");
-    Model planet("../../../resources/objects/planet/planet.obj");
+    Model rock("resources/objects/rock/rock.obj");
+    Model planet("resources/objects/planet/planet.obj");
 
     // Set projection matrix
     glm::mat4 projection = glm::perspective(45.0f, (GLfloat)screenWidth/(GLfloat)screenHeight, 1.0f, 10000.0f);
@@ -79,7 +79,7 @@ int main()
     glUniformMatrix4fv(glGetUniformLocation(instanceShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
     // Generate a large list of semi-random model transformation matrices
-    GLuint amount = 100000;
+    GLuint amount = 10;
     glm::mat4* modelMatrices;
     modelMatrices = new glm::mat4[amount];
     srand(glfwGetTime()); // initialize random seed	
