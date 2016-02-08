@@ -16,9 +16,10 @@
 
 // Other Libs
 #include <SOIL.h>
+#include <btBulletDynamicsCommon.h>
 
 // Properties
-const GLuint SCR_WIDTH = 800, SCR_HEIGHT = 600;
+const GLuint SCR_WIDTH = 1024, SCR_HEIGHT = 768;
 
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -62,9 +63,10 @@ Model* floor1;
 const GLfloat FLOOR1_Y = 3.5f;
 const int NUM_INSTANCES = 100;
 
-
 int main()
 {
+    glm::mat4 m(1);
+    //bulletDetectCollision(m,m);
     // Init GLFW
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);

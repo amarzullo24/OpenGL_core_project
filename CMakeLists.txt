@@ -36,8 +36,21 @@ include_directories(SYSTEM external/assimp/include)
 add_subdirectory(external/SOIL)
 include_directories(SYSTEM external/SOIL/src)
 
+# adding bullet
+set(BULLET_VERSION 2.82)
+include_directories(
+        external/bullet-2.82-r2704/src
+)
+add_subdirectory( external/bullet-2.82-r2704/src/BulletSoftBody )
+add_subdirectory( external/bullet-2.82-r2704/src/BulletCollision )
+add_subdirectory( external/bullet-2.82-r2704/src/BulletDynamics )
+add_subdirectory( external/bullet-2.82-r2704/src/LinearMath )
+
 if(WIN32)
-	set(LIBS glfw opengl32 libglew_static SOIL_Static assimp)
+        set(LIBS glfw opengl32 libglew_static SOIL_Static assimp
+            BulletDynamics
+            BulletCollision
+            LinearMath)
 elseif(UNIX)
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
   # Linux packages native to CMake
@@ -52,6 +65,9 @@ elseif(UNIX)
   list(APPEND LIBS ${X11_Xrandr_LIB} ${X11_Xxf86vm_LIB} ${X11_Xinerama_LIB} ${X11_Xi_LIB} ${X11_Xcursor_LIB})
   find_package(Threads REQUIRED)
   list(APPEND LIBS ${CMAKE_THREAD_LIBS_INIT})
+  list(APPEND LIBS BulletDynamics)
+  list(APPEND LIBS BulletCollision)
+  list(APPEND LIBS LinearMath)
   #find_library(RT_LIB rt)
   #list(APPEND LIBS ${RT_LIB})
   # append non-native packages
@@ -185,18 +201,6 @@ foreach(CHAPTER ${CHAPTERS})
 
             resources/textures/grass.jpg
             resources/textures/metal.png
-
-            resources/objects/nanosuit/nanosuit.mtl
-            resources/objects/nanosuit/nanosuit.obj
-
-            resources/objects/planet/planet.mtl
-            resources/objects/planet/planet.obj
-
-            resources/objects/floor1/house.mtl
-            resources/objects/floor1/house.obj
-
-            resources/objects/floor2/scene.mtl
-            resources/objects/floor2/scene.obj
 
         )
 

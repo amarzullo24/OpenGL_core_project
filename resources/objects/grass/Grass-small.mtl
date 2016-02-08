@@ -1,0 +1,14 @@
+# Blender MTL File: 'Grass-small.blend'
+# Material Count: 1
+
+newmtl Grass
+Ns 96.078431
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.042105 0.042105 0.042105
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 0.000000
+illum 2
+map_Kd C:/Users/PCofNico/Desktop/Grass/grass.png
+map_d C:/Users/PCofNico/Desktop/Grass/grass.png
