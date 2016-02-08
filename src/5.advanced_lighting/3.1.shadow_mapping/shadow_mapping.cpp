@@ -17,6 +17,8 @@
 // Other Libs
 #include <SOIL.h>
 
+#include <string>
+
 // Properties
 const GLuint SCR_WIDTH = 800, SCR_HEIGHT = 600;
 
@@ -25,7 +27,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void Do_Movement();
-GLuint loadTexture(GLchar* path, GLboolean alpha = false);
+GLuint loadTexture(string path, GLboolean alpha = false);
 void RenderScene(Shader &shader);
 void RenderCube();
 void RenderQuad();
@@ -33,12 +35,20 @@ void RenderQuad();
 void RenderFloor1(Shader&);
 void RenderModels(Shader &);
 void RenderGrass(Shader &);
+void RenderFlame(Shader &);
 void initFloor1();
 void initGrass();
+void initFlame();
 
 // Delta
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
+
+GLuint flameIndex = 0;
+const GLfloat FLOOR1_Y = 3.5f;
+const GLfloat FLOOR_OFFSET = 1.1f;
+const int NUM_INSTANCES = 500;
+const int NUM_FLAME_FRAMES = 5;
 
 // Options
 GLboolean shadows = true;
@@ -49,19 +59,18 @@ GLuint planeVAO;
 GLuint cubeTexture;
 GLuint floorTexture;
 GLuint transparentTexture;
+GLuint flameTexture[NUM_FLAME_FRAMES];
 GLuint floor1VAO, floor1VBO;
 GLuint transparentVAO, transparentVBO;
 GLuint instanceVBO;
+GLuint flameVAO, flameVBO;
 
 Model* monster;
 Model* floor1;
 
-const GLfloat FLOOR1_Y = 3.5f;
-const GLfloat FLOOR_OFFSET = 1.1f;
-const int NUM_INSTANCES = 500;
-
 // Camera
 Camera camera(glm::vec3(10.0f, FLOOR1_Y + 1, 20.0f));
+//Camera camera(glm::vec3(3,0,0));
 
 int main()
 {
@@ -100,6 +109,7 @@ int main()
     Shader floor1_shader("shaders/depth_testing.vs", "shaders/depth_testing.frag");
     Shader model_shader("shaders/model_shader.vs", "shaders/model_shader.frag");
     Shader grass_shader("shaders/blending_discard.vs", "shaders/blending_discard.frag");
+    Shader flame_shader("shaders/flame.vs", "shaders/flame.frag");
 
     // Set texture samples
     shader.Use();
@@ -171,6 +181,7 @@ int main()
 
     initFloor1();
     initGrass();
+    initFlame();
 
     // Game loop
     while (!glfwWindowShouldClose(window))
@@ -245,6 +256,7 @@ int main()
 
         RenderModels(model_shader);
         RenderGrass(grass_shader);
+        //RenderFlame(flame_shader);
 
         // Swap the buffers
         glfwSwapBuffers(window);
@@ -299,7 +311,7 @@ void initGrass(){
             glm::vec3 translation;
             translation.x =  rand()%30 - 15;
             translation.y = FLOOR1_Y + 0.5;
-            translation.z =  rand()%15 + 7;
+            translation.z =  rand()%6 + 3;
             translations[index++] = translation;
         }
     }
@@ -320,6 +332,8 @@ void initGrass(){
         1.0f,  0.5f,  0.0f,  1.0f,  0.0f
     };
 
+    Model grass("resources/objects/grass/Grass-small.obj");
+
     // Setup transparent plane VAO
     glGenVertexArrays(1, &transparentVAO);
     glGenBuffers(1, &transparentVBO);
@@ -332,7 +346,7 @@ void initGrass(){
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
     glBindVertexArray(0);
 
-    transparentTexture = loadTexture("resources/textures/grass.png", true);
+    transparentTexture = loadTexture("resources/textures/thorn.png", true);
 }
 
 void RenderGrass(Shader& shader){
@@ -346,9 +360,9 @@ void RenderGrass(Shader& shader){
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
     // Vegetation
-    glBindVertexArray(transparentVAO);
+    /*glBindVertexArray(transparentVAO);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, transparentTexture);
+    glBindTexture(GL_TEXTURE_2D, transparentTexture);*/
 
     glEnableVertexAttribArray(3);
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
@@ -359,6 +373,64 @@ void RenderGrass(Shader& shader){
     glDrawArraysInstanced(GL_TRIANGLES, 0, 30, NUM_INSTANCES);
     glBindVertexArray(0);
 }
+
+void initFlame(){
+
+    GLfloat transparentVertices[] = {
+        // Positions         // Texture Coords (swapped y coordinates because texture is flipped upside down)
+        0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+        0.0f, -0.5f,  0.0f,  0.0f,  1.0f,
+        1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+
+        0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+        1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+        1.0f,  0.5f,  0.0f,  1.0f,  0.0f
+    };
+
+    // Setup transparent plane VAO
+    glGenVertexArrays(1, &flameVAO);
+    glGenBuffers(1, &flameVBO);
+    glBindVertexArray(flameVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, flameVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    glBindVertexArray(0);
+
+    for (int i = 1; i <= NUM_FLAME_FRAMES; ++i) {
+        flameTexture[i-1] = loadTexture("resources/textures/flames/tmp-" + std::to_string(i) + ".png", true);
+    }
+
+}
+
+void RenderFlame(Shader& shader){
+
+    shader.Use();
+    glm::mat4 model;
+    glm::mat4 view = camera.GetViewMatrix();
+    glm::mat4 projection = glm::perspective(camera.Zoom, (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+    // Vegetation
+    glBindVertexArray(flameVAO);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, flameTexture[++flameIndex%=NUM_FLAME_FRAMES]);
+    //glBindTexture(GL_TEXTURE_2D, flameTexture[0]);
+
+   /* glEnableVertexAttribArray(3);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
+    glVertexAttribDivisor(3, 1);*/
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    //glDrawArraysInstanced(GL_TRIANGLES, 0, 30, NUM_INSTANCES);
+    glBindVertexArray(0);
+}
+
 
 void RenderFloor1(Shader &shader){
 
@@ -543,13 +615,14 @@ void RenderCube()
 // This function loads a texture from file. Note: texture loading functions like these are usually
 // managed by a 'Resource Manager' that manages all resources (like textures, models, audio).
 // For learning purposes we'll just define it as a utility function.
-GLuint loadTexture(GLchar* path, GLboolean alpha)
+GLuint loadTexture(string path, GLboolean alpha)
 {
     //Generate texture ID and load texture data
     GLuint textureID;
     glGenTextures(1, &textureID);
     int width,height;
-    unsigned char* image = SOIL_load_image(path, &width, &height, 0, alpha ? SOIL_LOAD_RGBA : SOIL_LOAD_RGB);
+    const char* p = path.c_str();
+    unsigned char* image = SOIL_load_image(p, &width, &height, 0, alpha ? SOIL_LOAD_RGBA : SOIL_LOAD_RGB);
     // Assign texture to ID
     glBindTexture(GL_TEXTURE_2D, textureID);
     glTexImage2D(GL_TEXTURE_2D, 0, alpha ? GL_RGBA : GL_RGB, width, height, 0, alpha ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, image);

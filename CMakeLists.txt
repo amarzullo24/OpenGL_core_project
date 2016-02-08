@@ -152,6 +152,8 @@ foreach(CHAPTER ${CHAPTERS})
             "resources/objects/floor1/textures/*"
             "resources/objects/nanosuit/*.jpg"
             "resources/objects/nanosuit/*.png"
+            "resources/textures/flames/*.png"
+            "resources/textures/*.png"
         )
 
         add_executable(${DEMO} ${SOURCE}
@@ -180,11 +182,10 @@ foreach(CHAPTER ${CHAPTERS})
             shaders/blending_discard.frag
             shaders/blending_discard.vs
 
-            resources/textures/wood.png
-            resources/objects/planet/planet_Quom1200.png
+            shaders/flame.frag
+            shaders/flame.vs
 
             resources/textures/grass.jpg
-            resources/textures/metal.png
 
             resources/objects/nanosuit/nanosuit.mtl
             resources/objects/nanosuit/nanosuit.obj
