@@ -169,6 +169,7 @@ foreach(CHAPTER ${CHAPTERS})
             "resources/objects/nanosuit/*.jpg"
             "resources/objects/nanosuit/*.png"
             "resources/textures/flames/*.png"
+            "resources/objects/fence/*.jpg"
             "resources/textures/*.png"
         )
 

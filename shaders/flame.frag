@@ -18,7 +18,7 @@ uniform vec3 viewPos;
 uniform bool shadows;
 
 const vec3 fogColor = vec3(0.5, 0.5,0.5);
-const float FogDensity = 0.10;
+const float FogDensity = 0.04;
 
 float ShadowCalculation(vec4 fragPosLightSpace)
 {
@@ -77,7 +77,7 @@ void main()
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = 0.0;
     vec3 halfwayDir = normalize(lightDir + viewDir);
-    spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
+    spec = pow(max(dot(normal, halfwayDir), 0.0), 80.0);
     vec3 specular = spec * lightColor;
     // Calculate shadow
     float shadow = shadows ? ShadowCalculation(fs_in.FragPosLightSpace) : 0.0;
@@ -87,7 +87,7 @@ void main()
     float fogFactor = 1.0 /exp( (dist * FogDensity)* (dist * FogDensity));
     fogFactor = clamp( fogFactor, 0.0, 1.0 );
 
-    //FragColor = mix(vec4(fogColor,1.0), vec4(lighting,1.0), fogFactor);
+    FragColor = mix(vec4(fogColor,1.0), vec4(lighting,1.0), fogFactor);
 
-    FragColor = vec4(color, 1.0f);
+    //FragColor = vec4(color, 1.0f);
 }

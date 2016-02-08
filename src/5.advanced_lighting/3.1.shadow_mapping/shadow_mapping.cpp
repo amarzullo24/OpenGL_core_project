@@ -41,6 +41,8 @@ void initFloor1();
 void initGrass();
 void initFlame();
 
+
+
 // Delta
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
@@ -48,7 +50,8 @@ GLfloat lastFrame = 0.0f;
 GLuint flameIndex = 0;
 const GLfloat FLOOR1_Y = 3.5f;
 const GLfloat FLOOR_OFFSET = 1.1f;
-const int NUM_INSTANCES = 100;
+const int NUM_INSTANCES = 10;
+const int NUM_FLAME_INSTANCES = 10;
 const int NUM_FLAME_FRAMES = 5;
 
 // Options
@@ -65,10 +68,14 @@ GLuint floor1VAO, floor1VBO;
 GLuint transparentVAO, transparentVBO;
 GLuint instanceVBO;
 GLuint flameVAO, flameVBO;
+GLuint flame_instanceVBO;
 
 Model* monster;
 Model* floor1;
 Model* grass;
+Model* fence;
+
+vector<glm::vec3> fences;
 
 // Camera
 Camera camera(glm::vec3(10.0f, FLOOR1_Y + 1, 20.0f));
@@ -147,7 +154,7 @@ int main()
 
     // Light source
     glm::vec3 lightPos(-2.0f, 4.0f, -1.0f);
-    glm::vec3 scndlightPos(0.0f, 20.0f, 0.0f);
+    glm::vec3 scndlightPos(-7.0f, 20.0f, -7.0f);
 
     // Load textures
     woodTexture = loadTexture("resources/textures/wood.png");
@@ -182,12 +189,24 @@ int main()
     monster = new Model("resources/objects/nanosuit/nanosuit.obj");
     floor1 = new Model("resources/objects/floor1/house.obj");
     grass = new Model("resources/objects/grass/Grass-small.obj");
+    fence = new Model("resources/objects/fence/fence.obj");
 
     /*--------------------------------------------------*/
 
     initFloor1();
     initGrass();
     initFlame();
+
+    fences.push_back(glm::vec3(8.0f, FLOOR1_Y - 1.0, 18.0f));
+    fences.push_back(glm::vec3(6.0f, FLOOR1_Y - 1.0, 17.0f));
+    fences.push_back(glm::vec3(3.0f, FLOOR1_Y - 1.0, 16.0f));
+    fences.push_back(glm::vec3(3.0f, FLOOR1_Y - 1.0, 16.0f));
+    fences.push_back(glm::vec3(2.0f, FLOOR1_Y - 1.0, 15.5f));
+    fences.push_back(glm::vec3(5.0f, FLOOR1_Y - 1.0, 14.0f));
+    fences.push_back(glm::vec3(9.0f, FLOOR1_Y - 1.0, 13.5f));
+    fences.push_back(glm::vec3(8.0f, FLOOR1_Y - 1.0, 12.0f));
+    fences.push_back(glm::vec3(7.0f, FLOOR1_Y - 1.0, 16.0f));
+    fences.push_back(glm::vec3(4.0f, FLOOR1_Y - 1.0, 10.5f));
 
     // Game loop
     while (!glfwWindowShouldClose(window))
@@ -205,7 +224,6 @@ int main()
         lightPos.z = cos(glfwGetTime()) * 2.0f;
 
         // 1. Render depth of scene to texture (from light's perspective)
-        // - Get light projection/view matrix.
         glm::mat4 lightProjection, lightView;
         glm::mat4 lightSpaceMatrix;
         GLfloat near_plane = 1.0f, far_plane = 7.5f;
@@ -220,6 +238,7 @@ int main()
         glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
         glClear(GL_DEPTH_BUFFER_BIT);
         RenderScene(simpleDepthShader);
+        //RenderModels(simpleDepthShader);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // 2. Render scene as normal
@@ -262,13 +281,15 @@ int main()
 
         RenderModels(model_shader);
         RenderGrass(grass_shader);
-        //RenderFlame(flame_shader);
+        RenderFlame(flame_shader);
 
         // Swap the buffers
         glfwSwapBuffers(window);
     }
 
     delete monster;
+    delete floor1;
+    delete grass;
 
     glfwTerminate();
     return 0;
@@ -304,96 +325,19 @@ void initFloor1(){
     floorTexture = loadTexture("resources/textures/marble.jpg");
 }
 
-/*void initGrass(){
-
-    glm::vec3 translations[NUM_INSTANCES];
-    int start = sqrt(NUM_INSTANCES);
-    int index = 0;
-
-    for(GLint y = 0; y < start; y += 2)
-    {
-        for(GLint x = 0; x < start; x += 2)
-        {
-            glm::vec3 translation;
-            translation.x =  rand()%30 - 15;
-            translation.y = FLOOR1_Y + 0.5;
-            translation.z =  rand()%6 + 3;
-            translations[index++] = translation;
-        }
-    }
-
-    glGenBuffers(1, &instanceVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * NUM_INSTANCES, &translations[0], GL_STATIC_DRAW);
-
-
-    GLfloat transparentVertices[] = {
-        // Positions         // Texture Coords (swapped y coordinates because texture is flipped upside down)
-        0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
-        0.0f, -0.5f,  0.0f,  0.0f,  1.0f,
-        1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
-
-        0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
-        1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
-        1.0f,  0.5f,  0.0f,  1.0f,  0.0f
-    };
-
-    // Setup transparent plane VAO
-    glGenVertexArrays(1, &transparentVAO);
-    glGenBuffers(1, &transparentVBO);
-    glBindVertexArray(transparentVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, transparentVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-    glBindVertexArray(0);
-
-    transparentTexture = loadTexture("resources/textures/thorn.png", true);
-}
-
-void RenderGrass(Shader& shader){
-
-    shader.Use();
-    glm::mat4 model;
-    glm::mat4 view = camera.GetViewMatrix();
-    glm::mat4 projection = glm::perspective(camera.Zoom, (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-
-    // Vegetation
-    glBindVertexArray(transparentVAO);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, transparentTexture);
-
-    glEnableVertexAttribArray(3);
-    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
-    glVertexAttribDivisor(3, 1);
-
-    //glDrawArrays(GL_TRIANGLES, 0, 6);
-    glDrawArraysInstanced(GL_TRIANGLES, 0, 30, NUM_INSTANCES);
-    glBindVertexArray(0);
-
-}*/
-
 void initGrass(){
 
     // Generate a large list of semi-random model transformation matrices
-    GLuint NUM_INSTANCES = 50;
     glm::mat4* modelMatrices;
     modelMatrices = new glm::mat4[NUM_INSTANCES];
     srand(glfwGetTime()); // initialize random seed
     for(GLuint i = 0; i < NUM_INSTANCES; i++)
     {
         glm::mat4 model;
-        glm::vec3 translation;
-        translation.x =  rand()%30 - 10;
-        translation.y = FLOOR1_Y + 0.5;
-        translation.z =  rand()%6 + 10;
+        glm::vec3 translation(rand()%30 - 10, FLOOR1_Y + 0.5, rand()%6 + 10);
+        GLfloat size = (rand()%50);
         model = glm::translate(model, translation);
+        //model = glm::scale(model, glm::vec3((1, size/100, 1)));
         modelMatrices[i] = model;
     }
 
@@ -450,6 +394,22 @@ void RenderGrass(Shader& shader){
 
 void initFlame(){
 
+    glm::vec3 translations[NUM_FLAME_INSTANCES];
+    int index = 0;
+
+    for(GLint y = 0; y < NUM_FLAME_INSTANCES; y++)
+    {
+        glm::vec3 translation;
+        translation.x =  rand()%30 - 15;
+        translation.y = FLOOR1_Y + 0.5;
+        translation.z =  rand()%6 + 3;
+        translations[index++] = translation;
+    }
+
+    glGenBuffers(1, &flame_instanceVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, flame_instanceVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * NUM_INSTANCES, &translations[0], GL_STATIC_DRAW);
+
     GLfloat transparentVertices[] = {
         // Positions         // Texture Coords (swapped y coordinates because texture is flipped upside down)
         0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
@@ -493,15 +453,13 @@ void RenderFlame(Shader& shader){
     glBindVertexArray(flameVAO);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, flameTexture[++flameIndex%=NUM_FLAME_FRAMES]);
-    //glBindTexture(GL_TEXTURE_2D, flameTexture[0]);
 
-    /* glEnableVertexAttribArray(3);
-    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    glEnableVertexAttribArray(3);
+    glBindBuffer(GL_ARRAY_BUFFER, flame_instanceVBO);
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
-    glVertexAttribDivisor(3, 1);*/
+    glVertexAttribDivisor(3, 1);
 
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    //glDrawArraysInstanced(GL_TRIANGLES, 0, 30, NUM_INSTANCES);
+    glDrawArraysInstanced(GL_TRIANGLES, 0, 30, NUM_FLAME_INSTANCES);
     glBindVertexArray(0);
 }
 
@@ -552,6 +510,16 @@ void RenderModels(Shader &shader){
     monster->Draw(shader);
 
     /*--------------------------DRAWING OBJ------------------*/
+
+    // Draw the loaded fences
+    for (int i = 0; i < fences.size(); ++i) {
+        model = glm::mat4();
+        model = glm::translate(model, fences[i]);
+        //model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        fence->Draw(shader);
+    }
+
 }
 
 void RenderScene(Shader &shader)
@@ -776,3 +744,78 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     camera.ProcessMouseScroll(yoffset);
 }
+
+/*void initGrass(){
+
+    glm::vec3 translations[NUM_INSTANCES];
+    int start = sqrt(NUM_INSTANCES);
+    int index = 0;
+
+    for(GLint y = 0; y < start; y += 2)
+    {
+        for(GLint x = 0; x < start; x += 2)
+        {
+            glm::vec3 translation;
+            translation.x =  rand()%30 - 15;
+            translation.y = FLOOR1_Y + 0.5;
+            translation.z =  rand()%6 + 3;
+            translations[index++] = translation;
+        }
+    }
+
+    glGenBuffers(1, &instanceVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * NUM_INSTANCES, &translations[0], GL_STATIC_DRAW);
+
+
+    GLfloat transparentVertices[] = {
+        // Positions         // Texture Coords (swapped y coordinates because texture is flipped upside down)
+        0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+        0.0f, -0.5f,  0.0f,  0.0f,  1.0f,
+        1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+
+        0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+        1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+        1.0f,  0.5f,  0.0f,  1.0f,  0.0f
+    };
+
+    // Setup transparent plane VAO
+    glGenVertexArrays(1, &transparentVAO);
+    glGenBuffers(1, &transparentVBO);
+    glBindVertexArray(transparentVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, transparentVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    glBindVertexArray(0);
+
+    transparentTexture = loadTexture("resources/textures/thorn.png", true);
+}
+
+void RenderGrass(Shader& shader){
+
+    shader.Use();
+    glm::mat4 model;
+    glm::mat4 view = camera.GetViewMatrix();
+    glm::mat4 projection = glm::perspective(camera.Zoom, (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+    // Vegetation
+    glBindVertexArray(transparentVAO);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, transparentTexture);
+
+    glEnableVertexAttribArray(3);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
+    glVertexAttribDivisor(3, 1);
+
+    //glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDrawArraysInstanced(GL_TRIANGLES, 0, 30, NUM_INSTANCES);
+    glBindVertexArray(0);
+
+}*/
