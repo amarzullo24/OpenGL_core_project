@@ -168,7 +168,6 @@ int main()
 
     monster = new Model("resources/objects/nanosuit/nanosuit.obj");
     floor1 = new Model("resources/objects/floor1/house.obj");
-
     /*--------------------------------------------------*/
 
     initFloor1();
