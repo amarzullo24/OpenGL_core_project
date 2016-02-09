@@ -33,6 +33,7 @@ public:
     // Camera Attributes
     glm::vec3 Position;
     glm::vec3 Front;
+    glm::vec3 FrontMy;
     glm::vec3 Up;
     glm::vec3 Right;
     glm::vec3 WorldUp;
@@ -45,7 +46,7 @@ public:
     GLfloat Zoom;
 
     // Constructor with vectors
-    Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), GLfloat yaw = YAW, GLfloat pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY), Zoom(ZOOM)
+    Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), GLfloat yaw = YAW, GLfloat pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), FrontMy(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY), Zoom(ZOOM)
     {
         this->Position = position;
         this->WorldUp = up;
@@ -54,7 +55,7 @@ public:
         this->updateCameraVectors();
     }
     // Constructor with scalar values
-    Camera(GLfloat posX, GLfloat posY, GLfloat posZ, GLfloat upX, GLfloat upY, GLfloat upZ, GLfloat yaw, GLfloat pitch) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY), Zoom(ZOOM)
+    Camera(GLfloat posX, GLfloat posY, GLfloat posZ, GLfloat upX, GLfloat upY, GLfloat upZ, GLfloat yaw, GLfloat pitch) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), FrontMy(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY), Zoom(ZOOM)
     {
         this->Position = glm::vec3(posX, posY, posZ);
         this->WorldUp = glm::vec3(upX, upY, upZ);
@@ -74,9 +75,9 @@ public:
     {
         GLfloat velocity = this->MovementSpeed * deltaTime;
         if (direction == FORWARD)
-            this->Position += this->Front * velocity;
+            this->Position += this->FrontMy * velocity;
         if (direction == BACKWARD)
-            this->Position -= this->Front * velocity;
+            this->Position -= this->FrontMy * velocity;
         if (direction == LEFT)
             this->Position -= this->Right * velocity;
         if (direction == RIGHT)
@@ -126,8 +127,16 @@ private:
         front.y = sin(glm::radians(this->Pitch));
         front.z = sin(glm::radians(this->Yaw)) * cos(glm::radians(this->Pitch));
         this->Front = glm::normalize(front);
+
+        glm::vec3 front1;
+        front1.x = cos(glm::radians(this->Yaw)) * cos(glm::radians(this->Pitch));
+//        front1.y = sin(glm::radians(this->Pitch));
+        front1.z = sin(glm::radians(this->Yaw)) * cos(glm::radians(this->Pitch));
+        this->FrontMy = glm::normalize(front1);
+
         // Also re-calculate the Right and Up vector
         this->Right = glm::normalize(glm::cross(this->Front, this->WorldUp));  // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
         this->Up    = glm::normalize(glm::cross(this->Right, this->Front));
+
     }
 };
