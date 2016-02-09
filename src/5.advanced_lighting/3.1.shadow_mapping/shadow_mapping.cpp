@@ -32,7 +32,7 @@ void RenderCube();
 void RenderQuad();
 
 void RenderFloor1(Shader&);
-void RenderModels(Shader &);
+bool RenderModels(Shader &);
 void RenderGrass(Shader &);
 void initFloor1();
 void initGrass();
@@ -287,9 +287,18 @@ int main()
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
+        Camera precedentCamera=camera.cameraPhoto();
         // Check and call events
         glfwPollEvents();
         Do_Movement();
+        glViewport(0, 0, SCR_WIDTH*2, SCR_HEIGHT*2);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        while(RenderModels(model_shader))
+        {
+            camera=precedentCamera;
+            glfwPollEvents();
+            Do_Movement();
+        }
 
         // Change light position over time
         lightPos.z = cos(glfwGetTime()) * 2.0f;
@@ -314,7 +323,6 @@ int main()
 
         // 2. Render scene as normal
         glViewport(0, 0, SCR_WIDTH*2, SCR_HEIGHT*2);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         shader.Use();
         glm::mat4 projection = glm::perspective(camera.Zoom, (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
@@ -340,7 +348,7 @@ int main()
         glUniform1i(glGetUniformLocation(shader.Program, "reverse_normals"), 0); // And of course disable it
 
         RenderScene(shader);
-//        RenderFloor1(floor1_shader);
+        RenderFloor1(floor1_shader);
 
 
         // Set light uniforms
@@ -350,7 +358,6 @@ int main()
         glUniform3fv(glGetUniformLocation(shader.Program, "lightPos"), 1, &scndlightPos[0]);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
 
-        RenderModels(model_shader);
         RenderGrass(grass_shader);
 
         // Swap the buffers
@@ -484,7 +491,7 @@ void RenderFloor1(Shader &shader){
     glBindVertexArray(0);
 }
 
-void RenderModels(Shader &shader){
+bool RenderModels(Shader &shader){
 
     // Draw objects
     shader.Use();
@@ -500,7 +507,7 @@ void RenderModels(Shader &shader){
     //model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// It's a bit too big for our scene, so scale it down
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
     floor1->Draw(shader);
-    bulletDetectCollision(floor1,projection*view*model);
+    bool toReturn=bulletDetectCollision(floor1,projection*view*model);
 
 
     /*--------------------------DRAWING OBJ------------------*/
@@ -514,6 +521,7 @@ void RenderModels(Shader &shader){
 //    bulletDetectCollision(monster,projection * view * model);
 
     /*--------------------------DRAWING OBJ------------------*/
+    return toReturn;
 }
 
 void RenderScene(Shader &shader)
