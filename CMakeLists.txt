@@ -154,7 +154,7 @@ set(5.advanced_lighting
     # 4.normal_mapping
     # 5.parallax_mapping
     # 6.hdr
-    #7.bloom
+    7.bloom
     # 8.deferred_shading
     # 9.ssao
 )
@@ -168,33 +168,11 @@ foreach(CHAPTER ${CHAPTERS})
             "resources/objects/floor1/textures/*"
             "resources/objects/nanosuit/*.jpg"
             "resources/objects/nanosuit/*.png"
+            "shaders/*.vs"
+            "shaders/*.frag"
         )
 
         add_executable(${DEMO} ${SOURCE}
-
-            shaders/coordinate_systems.frag
-            shaders/coordinate_systems.vs
-
-            shaders/advanced_lighting.vs
-            shaders/advanced_lighting.frag
-
-            shaders/shadow_mapping.vs
-            shaders/shadow_mapping.frag
-            shaders/shadow_mapping_depth.vs
-            shaders/shadow_mapping_depth.frag
-            shaders/debug_quad.vs
-            shaders/debug_quad_depth.frag
-
-            shaders/bloom.vs
-            shaders/bloom.frag
-            shaders/depth_testing.vs
-            shaders/depth_testing.frag
-
-            shaders/model_shader.vs
-            shaders/model_shader.frag
-
-            shaders/blending_discard.frag
-            shaders/blending_discard.vs
 
             resources/textures/wood.png
             resources/objects/planet/planet_Quom1200.png
