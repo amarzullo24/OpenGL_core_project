@@ -32,10 +32,12 @@ void RenderCube();
 void RenderQuad();
 
 void RenderFloor1(Shader&);
-bool RenderModels(Shader &);
+void RenderModels(Shader &);
 void RenderGrass(Shader &);
 void initFloor1();
 void initGrass();
+
+bool detectModelCollision();
 
 // Camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -293,12 +295,12 @@ int main()
         Do_Movement();
         glViewport(0, 0, SCR_WIDTH*2, SCR_HEIGHT*2);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        while(RenderModels(model_shader))
+        if(detectModelCollision())
         {
             camera=precedentCamera;
-            glfwPollEvents();
-            Do_Movement();
+            continue;
         }
+        RenderModels(model_shader);
 
         // Change light position over time
         lightPos.z = cos(glfwGetTime()) * 2.0f;
@@ -491,7 +493,7 @@ void RenderFloor1(Shader &shader){
     glBindVertexArray(0);
 }
 
-bool RenderModels(Shader &shader){
+void RenderModels(Shader &shader){
 
     // Draw objects
     shader.Use();
@@ -507,7 +509,7 @@ bool RenderModels(Shader &shader){
     //model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// It's a bit too big for our scene, so scale it down
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
     floor1->Draw(shader);
-    bool toReturn=bulletDetectCollision(floor1,projection*view*model);
+//    bool toReturn=bulletDetectCollision(floor1,projection*view*model);
 
 
     /*--------------------------DRAWING OBJ------------------*/
@@ -521,8 +523,33 @@ bool RenderModels(Shader &shader){
 //    bulletDetectCollision(monster,projection * view * model);
 
     /*--------------------------DRAWING OBJ------------------*/
+}
+
+bool detectModelCollision(){
+
+
+    glm::mat4 view = camera.GetViewMatrix();
+    glm::mat4 projection = glm::perspective(camera.Zoom, (float)SCR_WIDTH/(float)SCR_HEIGHT, 0.1f, 100.0f);
+
+    // Draw the loaded model
+    glm::mat4 model;
+    model = glm::translate(model, glm::vec3(2.0f, FLOOR1_Y+1.1, 2.0f)); // Translate it down a bit so it's at the center of the scene
+    //model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// It's a bit too big for our scene, so scale it down
+    bool toReturn=bulletDetectCollision(floor1,projection*view*model);
+
+
+    /*--------------------------DRAWING OBJ------------------*/
+
+    // Draw the loaded model
+    model = glm::mat4();
+    model = glm::translate(model, glm::vec3(2.0f, -0.50f, 2.0f)); // Translate it down a bit so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// It's a bit too big for our scene, so scale it down
+//    bulletDetectCollision(monster,projection * view * model);
+
+    /*--------------------------DRAWING OBJ------------------*/
     return toReturn;
 }
+
 
 void RenderScene(Shader &shader)
 {
