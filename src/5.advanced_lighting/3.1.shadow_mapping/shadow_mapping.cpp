@@ -20,7 +20,7 @@
 
 #include <string>
 
-#include "ParticleGenerator.h"
+//#include "ParticleGenerator.h"
 
 // Properties
 const GLuint SCR_WIDTH = 1024, SCR_HEIGHT = 768;
@@ -76,6 +76,8 @@ Model* monster;
 Model* floor1;
 Model* grass;
 Model* fence;
+Model* moon;
+Model* tree;
 
 vector<glm::vec3> fences;
 
@@ -185,7 +187,7 @@ int main()
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 
     /*-------------------Load models--------------------*/
 
@@ -193,6 +195,8 @@ int main()
     floor1 = new Model("resources/objects/floor1/house.obj");
     grass = new Model("resources/objects/grass/Grass-small.obj");
     fence = new Model("resources/objects/fence/fence.obj");
+    moon = new Model("resources/objects/floor1/moon.obj");
+    tree = new Model("resources/objects/grass/tree.obj");
 
     /*--------------------------------------------------*/
 
@@ -211,7 +215,7 @@ int main()
     fences.push_back(glm::vec3(7.0f, FLOOR1_Y - 1.0, 16.0f));
     fences.push_back(glm::vec3(4.0f, FLOOR1_Y - 1.0, 10.5f));
 
-    ParticleGenerator generator(particle_shader,5,&camera);
+    //ParticleGenerator generator(particle_shader,5,&camera);
 
 
     // Game loop
@@ -248,7 +252,7 @@ int main()
         glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
         glClear(GL_DEPTH_BUFFER_BIT);
-        //RenderScene(simpleDepthShader);
+        RenderScene(simpleDepthShader);
         //RenderModels(simpleDepthShader);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -271,31 +275,54 @@ int main()
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, depthMap);
 
-        // Room cube
+        // ******************* 1st Room cube ************ //
         glm::mat4 model;
         model = glm::scale(model, glm::vec3(10.0,6.9,10));
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         glUniform1i(glGetUniformLocation(shader.Program, "reverse_normals"), 1); // A small little hack to invert normals when drawing cube from the inside so lighting still works.
-        //RenderCube();
+        RenderCube();
         glUniform1i(glGetUniformLocation(shader.Program, "reverse_normals"), 0); // And of course disable it
+        // ******************* end 1st Room cube ************ //
 
-        //RenderScene(shader);
-        //RenderFloor1(floor1_shader);
 
+        // ******************* 2nd Room cube ************ //
+        model = glm::mat4();
+        model = glm::translate(model, glm::vec3(10.3f, 1.5, 0.f));
+        model = glm::scale(model, glm::vec3(10.0,3.9,10));
+        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        glUniform1i(glGetUniformLocation(shader.Program, "reverse_normals"), 1); // A small little hack to invert normals when drawing cube from the inside so lighting still works.
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D,floorTexture);
+        RenderCube();
+        glUniform1i(glGetUniformLocation(shader.Program, "reverse_normals"), 0); // And of course disable it
+        // ******************* end 2nd Room cube ************ //
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D,woodTexture);
+        RenderScene(shader);
+        RenderFloor1(floor1_shader);
 
         // Set light uniforms
         lightProjection = glm::perspective(45.0f, (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT, 1.0f, 2.0f);
         lightView = glm::lookAt(scndlightPos, glm::vec3(0.0f), glm::vec3(1.0));
         lightSpaceMatrix = lightProjection * lightView;
-        glUniform3fv(glGetUniformLocation(shader.Program, "lightPos"), 1, &scndlightPos[0]);
-        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+        glUniform3fv(glGetUniformLocation(grass_shader.Program, "lightPos"), 1, &scndlightPos[0]);
+        glUniformMatrix4fv(glGetUniformLocation(grass_shader.Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
 
 
-        //RenderGrass(grass_shader);
+        //Draw the moon
+        model = glm::mat4();
+        model = glm::translate(model, glm::vec3(2.0f, 20.0f, 2.0f)); // Translate it down a bit so it's at the center of the scene
+        model = glm::scale(model, glm::vec3(0.01f, 0.01f, 0.01f));	// It's a bit too big for our scene, so scale it down
+        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        moon->Draw(shader);
+
+
+        RenderGrass(grass_shader);
         //RenderFlame(flame_shader);
 
-        generator.Update(0.1f,10,glm::vec2(1,1));
-        generator.Draw();
+        //generator.Update(0.1f,10,glm::vec2(1,1));
+        //generator.Draw();
         // Swap the buffers
         glfwSwapBuffers(window);
     }
@@ -303,6 +330,9 @@ int main()
     delete monster;
     delete floor1;
     delete grass;
+    delete moon;
+    delete fence;
+    delete tree;
 
     glfwTerminate();
     return 0;
@@ -348,9 +378,9 @@ void initGrass(){
     {
         glm::mat4 model;
         glm::vec3 translation(rand()%30 - 10, FLOOR1_Y + 0.5, rand()%6 + 10);
-        GLfloat size = (rand()%50);
+        //GLfloat size = (rand()%50);
         model = glm::translate(model, translation);
-        //model = glm::scale(model, glm::vec3((1, size/100, 1)));
+        model = glm::scale(model, glm::vec3((1, 1, 1)));
         modelMatrices[i] = model;
     }
 
@@ -397,6 +427,7 @@ void RenderGrass(Shader& shader){
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
+    glBindTexture(GL_TEXTURE_2D, grass->textures_loaded[0].id);
     for(GLuint i = 0; i < grass->meshes.size(); i++)
     {
         glBindVertexArray(grass->meshes[i].VAO);
@@ -533,6 +564,20 @@ void RenderModels(Shader &shader){
         fence->Draw(shader);
     }
 
+    /*********************DRAW TREES************/
+    model = glm::mat4();
+    model = glm::translate(model, glm::vec3(10.0f, FLOOR1_Y, 2.0f)); // Translate it down a bit so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(0.7f, 0.7f, 0.7f));	// It's a bit too big for our scene, so scale it down
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+    tree->Draw(shader);
+
+    model = glm::mat4();
+    model = glm::translate(model, glm::vec3(-10.0f, FLOOR1_Y, -5.0f)); // Translate it down a bit so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(0.7f, 0.7f, 0.7f));	// It's a bit too big for our scene, so scale it down
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+    tree->Draw(shader);
+    /********************* END DRAW TREES************/
+
 }
 
 void RenderScene(Shader &shader)
@@ -559,6 +604,7 @@ void RenderScene(Shader &shader)
     model = glm::scale(model, glm::vec3(0.5));
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
     RenderCube();
+
 }
 
 
