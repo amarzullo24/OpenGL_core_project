@@ -171,38 +171,11 @@ foreach(CHAPTER ${CHAPTERS})
             "resources/textures/flames/*.png"
             "resources/objects/fence/*.jpg"
             "resources/textures/*.png"
+            "shaders/*.vs"
+            "shaders/*.frag"
         )
 
         add_executable(${DEMO} ${SOURCE}
-
-            shaders/coordinate_systems.frag
-            shaders/coordinate_systems.vs
-
-            shaders/advanced_lighting.vs
-            shaders/advanced_lighting.frag
-
-            shaders/shadow_mapping.vs
-            shaders/shadow_mapping.frag
-            shaders/shadow_mapping_depth.vs
-            shaders/shadow_mapping_depth.frag
-            shaders/debug_quad.vs
-            shaders/debug_quad_depth.frag
-
-            shaders/bloom.vs
-            shaders/bloom.frag
-            shaders/depth_testing.vs
-            shaders/depth_testing.frag
-
-            shaders/model_shader.vs
-            shaders/model_shader.frag
-
-            shaders/blending_discard.frag
-            shaders/blending_discard.vs
-
-            shaders/flame.frag
-            shaders/flame.vs
-
-            resources/textures/grass.jpg
 
         )
 

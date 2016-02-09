@@ -20,6 +20,8 @@
 
 #include <string>
 
+#include "ParticleGenerator.h"
+
 // Properties
 const GLuint SCR_WIDTH = 1024, SCR_HEIGHT = 768;
 
@@ -121,6 +123,7 @@ int main()
     Shader model_shader("shaders/model_shader.vs", "shaders/model_shader.frag");
     Shader grass_shader("shaders/blending_discard.vs", "shaders/blending_discard.frag");
     Shader flame_shader("shaders/flame.vs", "shaders/flame.frag");
+    Shader particle_shader("shaders/fire.vs", "shaders/fire.frag");
 
     // Set texture samples
     shader.Use();
@@ -208,6 +211,9 @@ int main()
     fences.push_back(glm::vec3(7.0f, FLOOR1_Y - 1.0, 16.0f));
     fences.push_back(glm::vec3(4.0f, FLOOR1_Y - 1.0, 10.5f));
 
+    ParticleGenerator generator(particle_shader,5,&camera);
+
+
     // Game loop
     while (!glfwWindowShouldClose(window))
     {
@@ -223,6 +229,11 @@ int main()
         // Change light position over time
         lightPos.z = cos(glfwGetTime()) * 2.0f;
 
+        // 2. Render scene as normal
+        glViewport(0, 0, SCR_WIDTH*2, SCR_HEIGHT*2);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        RenderModels(model_shader);
+
         // 1. Render depth of scene to texture (from light's perspective)
         glm::mat4 lightProjection, lightView;
         glm::mat4 lightSpaceMatrix;
@@ -237,13 +248,13 @@ int main()
         glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
         glClear(GL_DEPTH_BUFFER_BIT);
-        RenderScene(simpleDepthShader);
+        //RenderScene(simpleDepthShader);
         //RenderModels(simpleDepthShader);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        // 2. Render scene as normal
+
         glViewport(0, 0, SCR_WIDTH*2, SCR_HEIGHT*2);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         shader.Use();
         glm::mat4 projection = glm::perspective(camera.Zoom, (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
@@ -265,11 +276,11 @@ int main()
         model = glm::scale(model, glm::vec3(10.0,6.9,10));
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         glUniform1i(glGetUniformLocation(shader.Program, "reverse_normals"), 1); // A small little hack to invert normals when drawing cube from the inside so lighting still works.
-        RenderCube();
+        //RenderCube();
         glUniform1i(glGetUniformLocation(shader.Program, "reverse_normals"), 0); // And of course disable it
 
-        RenderScene(shader);
-        RenderFloor1(floor1_shader);
+        //RenderScene(shader);
+        //RenderFloor1(floor1_shader);
 
 
         // Set light uniforms
@@ -279,10 +290,12 @@ int main()
         glUniform3fv(glGetUniformLocation(shader.Program, "lightPos"), 1, &scndlightPos[0]);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
 
-        RenderModels(model_shader);
-        RenderGrass(grass_shader);
-        RenderFlame(flame_shader);
 
+        //RenderGrass(grass_shader);
+        //RenderFlame(flame_shader);
+
+        generator.Update(0.1f,10,glm::vec2(1,1));
+        generator.Draw();
         // Swap the buffers
         glfwSwapBuffers(window);
     }
