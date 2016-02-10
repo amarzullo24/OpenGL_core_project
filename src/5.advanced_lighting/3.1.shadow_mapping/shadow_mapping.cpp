@@ -123,6 +123,10 @@ int main()
     glEnable(GL_DEPTH_TEST);
 
     // Setup and compile our shaders
+    Shader shader1("shaders/bloom.vs", "shaders/bloom.frag");
+
+
+    // Setup and compile our shaders
     Shader shaderCube("shaders/cube.vs", "shaders/cube.frag");
     Shader shaderShadow("shaders/shadow_mapping.vs", "shaders/shadow_mapping.frag");
     Shader simpleDepthShader("shaders/shadow_mapping_depth.vs", "shaders/shadow_mapping_depth.frag");
@@ -203,7 +207,7 @@ int main()
 
     /*-------------------Load models--------------------*/
 
-    monster = new Model("resources/objects/nanosuit/nanosuit.obj");
+//    monster = new Model("resources/objects/nanosuit/nanosuit.obj");
     floor1 = new Model("resources/objects/floor1/house.obj");
     grass = new Model("resources/objects/grass/Grass-small.obj");
     fence = new Model("resources/objects/fence/fence.obj");
@@ -504,7 +508,7 @@ int main()
         glfwSwapBuffers(window);
     }
 
-    delete monster;
+//    delete monster;
     delete floor1;
     delete grass;
     delete moon;
@@ -723,12 +727,12 @@ void RenderModels(Shader &shader){
 
     /*--------------------------DRAWING OBJ------------------*/
 
-    // Draw the loaded model
-    model = glm::mat4();
-    model = glm::translate(model, glm::vec3(2.0f, -0.50f, 2.0f)); // Translate it down a bit so it's at the center of the scene
-    model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// It's a bit too big for our scene, so scale it down
-    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-    monster->Draw(shader);
+//    // Draw the loaded model
+//    model = glm::mat4();
+//    model = glm::translate(model, glm::vec3(2.0f, -0.50f, 2.0f)); // Translate it down a bit so it's at the center of the scene
+//    model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// It's a bit too big for our scene, so scale it down
+//    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+//    monster->Draw(shader);
 
     /*--------------------------DRAWING OBJ------------------*/
 

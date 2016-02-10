@@ -18,7 +18,6 @@ uniform sampler2D diffuseTexture;
 uniform vec3 viewPos;
 
 void main()
-<<<<<<< HEAD
 {
     vec3 color = texture(diffuseTexture, fs_in.TexCoords).rgb;
     vec3 normal = normalize(fs_in.Normal);
@@ -47,9 +46,4 @@ void main()
     // else
         // BloomColor = vec4(0.0, 0.0, 0.0, 1.0);
     FragColor = vec4(result, 1.0f);
-=======
-{             
-    float depth = LinearizeDepth(gl_FragCoord.z);
-    color = vec4(vec3(depth), 1.0f);
->>>>>>> origin/Aldo
 }
