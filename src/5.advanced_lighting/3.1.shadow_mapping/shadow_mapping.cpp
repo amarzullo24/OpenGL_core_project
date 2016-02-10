@@ -78,6 +78,8 @@ Model* grass;
 Model* fence;
 Model* moon;
 Model* tree;
+Model* well;
+Model* wheel;
 
 vector<glm::vec3> fences;
 
@@ -197,6 +199,8 @@ int main()
     fence = new Model("resources/objects/fence/fence.obj");
     moon = new Model("resources/objects/floor1/moon.obj");
     tree = new Model("resources/objects/grass/tree.obj");
+    well = new Model("resources/objects/elevator/well.obj");
+    wheel = new Model("resources/objects/elevator/wheel.obj");
 
     /*--------------------------------------------------*/
 
@@ -364,7 +368,7 @@ void initFloor1(){
     glBindVertexArray(0);
 
     // Load textures
-    cubeTexture = loadTexture("resources/textures/marble.jpg");
+    cubeTexture = loadTexture("resources/textures/container2.png");
     floorTexture = loadTexture("resources/textures/marble.jpg");
 }
 
@@ -578,6 +582,28 @@ void RenderModels(Shader &shader){
     tree->Draw(shader);
     /********************* END DRAW TREES************/
 
+    /******************* Elevator base *******************/
+    model = glm::mat4();
+    GLfloat diff = (cos(glfwGetTime())*4  + FLOOR1_Y) + FLOOR1_Y + 0.6;
+    GLfloat diffW = diff;
+    diff = diff <= 8 ? diff : 8;
+    model = glm::translate(model,glm::vec3(0, diff,-5.2));
+    model = glm::scale(model,glm::vec3(5,0.2,3));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, cubeTexture);
+    RenderCube();
+
+    model = glm::mat4();
+    model = glm::translate(model,glm::vec3(-0.5, FLOOR1_Y + 1,-7));
+    model = glm::rotate(model,1.56f,glm::vec3(0,1,0));
+    model = glm::scale(model,glm::vec3(0.3,0.3,0.5));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+    well->Draw(shader);
+    model = glm::rotate(model,diffW,glm::vec3(0,0,1));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+    wheel->Draw(shader);
+    /******************* draw Elevator base **************/
 }
 
 void RenderScene(Shader &shader)
