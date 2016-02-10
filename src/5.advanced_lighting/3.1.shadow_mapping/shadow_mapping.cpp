@@ -588,14 +588,14 @@ void RenderModels(Shader &shader){
     GLfloat diffW = diff;
     diff = diff <= 8 ? diff : 8;
     model = glm::translate(model,glm::vec3(0, diff,-5.2));
-    model = glm::scale(model,glm::vec3(5,0.2,3));
+    model = glm::scale(model,glm::vec3(3,0.2,3));
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, cubeTexture);
     RenderCube();
 
     model = glm::mat4();
-    model = glm::translate(model,glm::vec3(-0.5, FLOOR1_Y + 1,-7));
+    model = glm::translate(model,glm::vec3(-1.1, FLOOR1_Y + 1,-7));
     model = glm::rotate(model,1.56f,glm::vec3(0,1,0));
     model = glm::scale(model,glm::vec3(0.3,0.3,0.5));
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
