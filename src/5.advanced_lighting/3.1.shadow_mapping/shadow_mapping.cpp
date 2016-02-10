@@ -248,10 +248,10 @@ int main()
     lightPositions.push_back(glm::vec3(12.8f, 2.4f, -1.0f));
     // - Colors
     std::vector<glm::vec3> lightColors;
-    lightColors.push_back(glm::vec3(2.0f, 2.0f, 2.0f));
-    lightColors.push_back(glm::vec3(1.5f, 0.0f, 0.0f));
-    lightColors.push_back(glm::vec3(0.0f, 0.0f, 1.5f));
-    lightColors.push_back(glm::vec3(0.0f, 1.5f, 0.0f));
+    lightColors.push_back(glm::vec3(52.0f, 52.0f, 52.0f));
+    lightColors.push_back(glm::vec3(50.5f, 0.0f, 0.0f));
+    lightColors.push_back(glm::vec3(0.0f, 0.0f, 50.5f));
+    lightColors.push_back(glm::vec3(0.0f, 51.5f, 0.0f));
 
 
     // Set up floating point framebuffer to render scene to
