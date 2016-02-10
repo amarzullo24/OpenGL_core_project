@@ -18,15 +18,19 @@
 #include <SOIL.h>
 #include <btBulletDynamicsCommon.h>
 
+#include <string>
+
+#include "ParticleGenerator.h"
+
 // Properties
-const GLuint SCR_WIDTH = 1024*2, SCR_HEIGHT = 768*2;
+const GLuint SCR_WIDTH = 1024, SCR_HEIGHT = 768;
 
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void Do_Movement();
-GLuint loadTexture(GLchar* path, GLboolean alpha = false);
+GLuint loadTexture(string path, GLboolean alpha = false);
 void RenderScene(Shader &shader);
 void RenderCube();
 void RenderQuad();
@@ -34,19 +38,23 @@ void RenderQuad();
 void RenderFloor1(Shader&);
 void RenderModels(Shader &);
 void RenderGrass(Shader &);
+void RenderFlame(Shader &);
 void initFloor1();
 void initGrass();
+void initFlame();
 
-void renderBloom(GLuint& depthMapFBO,Shader& shader,Shader& shaderLight,Shader& shaderBlur, Shader& shaderBloomFinal, std::vector<glm::vec3>& lightPositions, std::vector<glm::vec3>& lightColors,GLuint pingpongFBO[2], GLuint colorBuffers[2], GLuint pingpongColorbuffers[2]);
 
-bool detectModelCollision();
-
-// Camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
 // Delta
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
+
+GLuint flameIndex = 0;
+const GLfloat FLOOR1_Y = 3.5f;
+const GLfloat FLOOR_OFFSET = 1.1f;
+const int NUM_INSTANCES = 10;
+const int NUM_FLAME_INSTANCES = 10;
+const int NUM_FLAME_FRAMES = 5;
 
 // Options
 GLboolean shadows = true;
@@ -57,127 +65,31 @@ GLuint planeVAO;
 GLuint cubeTexture;
 GLuint floorTexture;
 GLuint transparentTexture;
+GLuint flameTexture[NUM_FLAME_FRAMES];
 GLuint floor1VAO, floor1VBO;
 GLuint transparentVAO, transparentVBO;
 GLuint instanceVBO;
+GLuint flameVAO, flameVBO;
+GLuint flame_instanceVBO;
 
 Model* monster;
 Model* floor1;
+Model* grass;
+Model* fence;
+Model* moon;
+Model* tree;
+Model* well;
+Model* wheel;
 
-const GLfloat FLOOR1_Y = 3.5f;
-const int NUM_INSTANCES = 100;
+vector<glm::vec3> fences;
+
+// Camera
+//Camera camera(glm::vec3(10.0f, FLOOR1_Y + 1, 20.0f));
+Camera camera(glm::vec3(3,0,0));
 
 // Options
 GLboolean bloom = true; // Change with 'Space'
 GLfloat exposure = 1.0f; // Change with Q and E
-
-bool bulletDetectCollision(Model* model,glm::mat4 mat4_model_matrix)
-{
-
-    btCollisionConfiguration* bt_collision_configuration= new btDefaultCollisionConfiguration();;
-    btCollisionDispatcher* bt_dispatcher=new btCollisionDispatcher(bt_collision_configuration);
-    btBroadphaseInterface* bt_broadphase;
-    btCollisionWorld* bt_collision_world;
-
-    double scene_size = 500;
-    unsigned int max_objects = 16000;
-
-
-    btScalar sscene_size = (btScalar) scene_size;
-    btVector3 worldAabbMin(-sscene_size, -sscene_size, -sscene_size);
-    btVector3 worldAabbMax(sscene_size, sscene_size, sscene_size);
-    //This is one type of broadphase, bullet has others that might be faster depending on the application
-    bt_broadphase = new bt32BitAxisSweep3(worldAabbMin, worldAabbMax, max_objects, 0, true);  // true for disabling raycast accelerator
-
-    bt_collision_world = new btCollisionWorld(bt_dispatcher, bt_broadphase, bt_collision_configuration);
-    //Create two collision objects
-    btCollisionObject* camera_sphere = new btCollisionObject();
-    camera_sphere->getWorldTransform().setOrigin(btVector3((btScalar) 0, (btScalar) 0, (btScalar) 0));
-
-    btTriangleMesh* trimesh = new btTriangleMesh();
-    for (int i=0;i<model->meshes.size();i++)
-    {
-        vector<Vertex> vertex = model->meshes[i].vertices;
-        for(int j=0;j<vertex.size();j+=3)
-        {
-            vector<btVector3> triangle_vertices;
-            glm::vec4 translated_vertex;
-            for(int z=0;z<3;z++)
-            {
-                translated_vertex=mat4_model_matrix*glm::vec4(vertex[j+z].Position,1);
-                triangle_vertices.push_back(btVector3(translated_vertex[0],translated_vertex[1],translated_vertex[2]));
-                //                triangle_vertices.push_back(btVector3(vertex[j+z].Position[0],vertex[j+z].Position[1],vertex[j+z].Position[2]));
-
-            }
-            trimesh->addTriangle(triangle_vertices[0],triangle_vertices[1],triangle_vertices[2]);
-        }
-    }
-    btScalar btScalar_matrix[16];
-    for(int i=0;i<4;i++)
-    {
-        glm::vec4 result = mat4_model_matrix[i];
-        for(int j=0;j<4;j++)
-            btScalar_matrix[i*4+j]=result[j];
-    }
-    btCollisionObject* model_coll_obj = new btCollisionObject();
-
-    btCollisionShape* shape = 0;
-    bool useQuantization = true;
-    shape  = new btBvhTriangleMeshShape(trimesh,useQuantization);
-    model_coll_obj->setCollisionShape(shape);
-    //    model_coll_obj->getWorldTransform().setFromOpenGLMatrix(btScalar_matrix);
-
-    //Create a sphere with a radius of 1
-    btSphereShape * sphere_shape = new btSphereShape(0.1);
-    //Set the shape of each collision object
-    camera_sphere->setCollisionShape(sphere_shape);
-    //Add the collision objects to our collision world
-    bt_collision_world->addCollisionObject(camera_sphere);
-    bt_collision_world->addCollisionObject(model_coll_obj);
-
-    //Perform collision detection
-    bt_collision_world->performDiscreteCollisionDetection();
-
-    int numManifolds = bt_collision_world->getDispatcher()->getNumManifolds();
-    //For each contact manifold
-    for (int i = 0; i < numManifolds; i++) {
-        btPersistentManifold* contactManifold = bt_collision_world->getDispatcher()->getManifoldByIndexInternal(i);
-        const btCollisionObject* obA = static_cast<const btCollisionObject*>(contactManifold->getBody0());
-        const btCollisionObject* obB = static_cast<const btCollisionObject*>(contactManifold->getBody1());
-        contactManifold->refreshContactPoints(obA->getWorldTransform(), obB->getWorldTransform());
-        int numContacts = contactManifold->getNumContacts();
-        //For each contact point in that manifold
-        for (int j = 0; j < numContacts; j++) {
-            //Get the contact information
-            btManifoldPoint& pt = contactManifold->getContactPoint(j);
-            btVector3 ptA = pt.getPositionWorldOnA();
-            btVector3 ptB = pt.getPositionWorldOnB();
-            double ptdist = pt.getDistance();
-            cout<<ptA<<"   "<<ptB<<"   "<<ptdist<<endl;
-        }
-    }
-
-    bt_collision_world->removeCollisionObject(camera_sphere);
-    delete camera_sphere;
-
-    bt_collision_world->removeCollisionObject(model_coll_obj);
-    delete model_coll_obj;
-    delete trimesh;
-    delete shape;
-
-    delete sphere_shape;
-
-    delete bt_collision_world;
-    delete bt_collision_configuration;
-    delete bt_dispatcher;
-    delete bt_broadphase;
-
-
-    return numManifolds>0;
-
-}
-
-
 
 int main()
 {
@@ -187,10 +99,9 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH/2, SCR_HEIGHT/2, "LearnOpenGL", nullptr, nullptr); // Windowed
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", nullptr, nullptr); // Windowed
     glfwMakeContextCurrent(window);
 
     // Set the required callback functions
@@ -206,7 +117,7 @@ int main()
     glewInit();
 
     // Define the viewport dimensions
-    glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+    glViewport(0, 0, SCR_WIDTH*2, SCR_HEIGHT*2);
 
     // Setup some OpenGL options
     glEnable(GL_DEPTH_TEST);
@@ -218,14 +129,15 @@ int main()
     Shader floor1_shader("shaders/depth_testing.vs", "shaders/depth_testing.frag");
     Shader model_shader("shaders/model_shader.vs", "shaders/model_shader.frag");
     Shader grass_shader("shaders/blending_discard.vs", "shaders/blending_discard.frag");
+    Shader flame_shader("shaders/flame.vs", "shaders/flame.frag");
+    Shader particle_shader("shaders/fire.vs", "shaders/fire.frag");
+
 
     // Setup and compile our shaders
     Shader shader("shaders/bloom.vs", "shaders/bloom.frag");
     Shader shaderLight("shaders/bloom.vs", "shaders/light_box.frag");
     Shader shaderBlur("shaders/blur.vs", "shaders/blur.frag");
     Shader shaderBloomFinal("shaders/bloom_final.vs", "shaders/bloom_final.frag");
-
-
 
     // Set texture samples
     shaderShadow.Use();
@@ -259,12 +171,13 @@ int main()
 
     // Light source
     glm::vec3 lightPos(-2.0f, 4.0f, -1.0f);
-    glm::vec3 scndlightPos(0.0f, 20.0f, 0.0f);
+    glm::vec3 scndlightPos(-7.0f, 20.0f, -7.0f);
+
     // Load textures
     woodTexture = loadTexture("resources/textures/wood.png");
 
     // Configure depth map FBO
-    const GLuint SHADOW_WIDTH = SCR_WIDTH*2, SHADOW_HEIGHT = SCR_WIDTH*2;
+    const GLuint SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
     GLuint depthMapFBO;
     glGenFramebuffers(1, &depthMapFBO);
     // - Create depth texture
@@ -286,19 +199,38 @@ int main()
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 
     /*-------------------Load models--------------------*/
 
     monster = new Model("resources/objects/nanosuit/nanosuit.obj");
     floor1 = new Model("resources/objects/floor1/house.obj");
+    grass = new Model("resources/objects/grass/Grass-small.obj");
+    fence = new Model("resources/objects/fence/fence.obj");
+    moon = new Model("resources/objects/floor1/moon.obj");
+    tree = new Model("resources/objects/grass/tree.obj");
+    well = new Model("resources/objects/elevator/well.obj");
+    wheel = new Model("resources/objects/elevator/wheel.obj");
+
     /*--------------------------------------------------*/
 
     initFloor1();
     initGrass();
 
-    //------------------------
+    fences.push_back(glm::vec3(8.0f, FLOOR1_Y - 1.0, 18.0f));
+    fences.push_back(glm::vec3(6.0f, FLOOR1_Y - 1.0, 17.0f));
+    fences.push_back(glm::vec3(3.0f, FLOOR1_Y - 1.0, 16.0f));
+    fences.push_back(glm::vec3(3.0f, FLOOR1_Y - 1.0, 16.0f));
+    fences.push_back(glm::vec3(2.0f, FLOOR1_Y - 1.0, 15.5f));
+    fences.push_back(glm::vec3(5.0f, FLOOR1_Y - 1.0, 14.0f));
+    fences.push_back(glm::vec3(9.0f, FLOOR1_Y - 1.0, 13.5f));
+    fences.push_back(glm::vec3(8.0f, FLOOR1_Y - 1.0, 12.0f));
+    fences.push_back(glm::vec3(7.0f, FLOOR1_Y - 1.0, 16.0f));
+    fences.push_back(glm::vec3(4.0f, FLOOR1_Y - 1.0, 10.5f));
 
+
+
+    //_______
     shaderBloomFinal.Use();
     glUniform1i(glGetUniformLocation(shaderBloomFinal.Program, "scene"), 0);
     glUniform1i(glGetUniformLocation(shaderBloomFinal.Program, "bloomBlur"), 1);
@@ -374,23 +306,23 @@ int main()
     }
 
 
+
     shaderShadow.Use();
 
     glClearColor(0.0f,0.0f,0.0f,1.0f);
+
+
     // Game loop
     while (!glfwWindowShouldClose(window))
     {
-
         // Set frame time
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        Camera precedentCamera=camera.cameraPhoto();
         // Check and call events
         glfwPollEvents();
         Do_Movement();
-
 
         glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -411,15 +343,18 @@ int main()
         glUniform3fv(glGetUniformLocation(shader.Program, "viewPos"), 1, &camera.Position[0]);
 
         /********************************ORIGINALE**************************/
-
         shaderShadow.Use();
         RenderModels(model_shader);
 
         // Change light position over time
         lightPos.z = cos(glfwGetTime()) * 2.0f;
 
+        // 2. Render scene as normal
+        glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+        shaderShadow.Use();
+        RenderModels(model_shader);
+
         // 1. Render depth of scene to texture (from light's perspective)
-        // - Get light projection/view matrix.
         glm::mat4 lightProjection, lightView;
         glm::mat4 lightSpaceMatrix;
         GLfloat near_plane = 1.0f, far_plane = 7.5f;
@@ -434,10 +369,12 @@ int main()
         glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
         glClear(GL_DEPTH_BUFFER_BIT);
         RenderScene(simpleDepthShader);
+        //RenderModels(simpleDepthShader);
         glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
 
-        // 2. Render scene as normal
+
         glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+
         shaderShadow.Use();
         projection = glm::perspective(camera.Zoom, (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         view = camera.GetViewMatrix();
@@ -454,15 +391,29 @@ int main()
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, depthMap);
 
-        // Room cube
-
+        // ******************* 1st Room cube ************ //
+        model=glm::mat4();
         model = glm::scale(model, glm::vec3(10.0,6.9,10));
         glUniformMatrix4fv(glGetUniformLocation(shaderShadow.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         glUniform1i(glGetUniformLocation(shaderShadow.Program, "reverse_normals"), 1); // A small little hack to invert normals when drawing cube from the inside so lighting still works.
         RenderCube();
         glUniform1i(glGetUniformLocation(shaderShadow.Program, "reverse_normals"), 0); // And of course disable it
+        // ******************* end 1st Room cube ************ //
 
-        /////////////////
+
+        // ******************* 2nd Room cube ************ //
+        model = glm::mat4();
+        model = glm::translate(model, glm::vec3(10.3f, 1.5, 0.f));
+        model = glm::scale(model, glm::vec3(10.0,3.9,10));
+        glUniformMatrix4fv(glGetUniformLocation(shaderShadow.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        glUniform1i(glGetUniformLocation(shaderShadow.Program, "reverse_normals"), 1); // A small little hack to invert normals when drawing cube from the inside so lighting still works.
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D,floorTexture);
+        RenderCube();
+        glUniform1i(glGetUniformLocation(shaderShadow.Program, "reverse_normals"), 0); // And of course disable it
+        // ******************* end 2nd Room cube ************ //
+
+        // ******************* Sky cube************ //
 
         shaderCube.Use();
         projection = glm::perspective(camera.Zoom, (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
@@ -470,29 +421,38 @@ int main()
         glUniformMatrix4fv(glGetUniformLocation(shaderCube.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(shaderCube.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
-        //sky cube
+        // Room cube
         model =glm::mat4();
         model = glm::scale(model, glm::vec3(100.0,100.9,100));
         glUniformMatrix4fv(glGetUniformLocation(shaderCube.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
         RenderCube();
+        // ******************* end Sky cube************ //
 
 
-        /////////////////
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D,woodTexture);
         RenderScene(shaderShadow);
         RenderFloor1(floor1_shader);
-
 
         // Set light uniforms
         lightProjection = glm::perspective(45.0f, (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT, 1.0f, 2.0f);
         lightView = glm::lookAt(scndlightPos, glm::vec3(0.0f), glm::vec3(1.0));
         lightSpaceMatrix = lightProjection * lightView;
-        glUniform3fv(glGetUniformLocation(shaderShadow.Program, "lightPos"), 1, &scndlightPos[0]);
-        glUniformMatrix4fv(glGetUniformLocation(shaderShadow.Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+        glUniform3fv(glGetUniformLocation(grass_shader.Program, "lightPos"), 1, &scndlightPos[0]);
+        glUniformMatrix4fv(glGetUniformLocation(grass_shader.Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+
+
+        //Draw the moon
+        model = glm::mat4();
+        model = glm::translate(model, glm::vec3(2.0f, 20.0f, 2.0f)); // Translate it down a bit so it's at the center of the scene
+        model = glm::scale(model, glm::vec3(0.01f, 0.01f, 0.01f));	// It's a bit too big for our scene, so scale it down
+        glUniformMatrix4fv(glGetUniformLocation(shaderShadow.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        // moon->Draw(shader);
+
 
         RenderGrass(grass_shader);
-
-        /******************************** end ORIGINALE**************************/
+        //RenderFlame(flame_shader);
 
         // - finally show all the light sources as bright cubes
         shaderLight.Use();
@@ -538,88 +498,21 @@ int main()
         glUniform1f(glGetUniformLocation(shaderBloomFinal.Program, "exposure"), exposure);
         RenderQuad();
 
+
+
         // Swap the buffers
         glfwSwapBuffers(window);
     }
 
     delete monster;
+    delete floor1;
+    delete grass;
+    delete moon;
+    delete fence;
+    delete tree;
 
     glfwTerminate();
     return 0;
-}
-
-
-void renderBloom(GLuint& depthMapFBO,Shader& shader,Shader& shaderLight,Shader& shaderBlur, Shader& shaderBloomFinal, std::vector<glm::vec3>& lightPositions, std::vector<glm::vec3>& lightColors,GLuint pingpongFBO[2], GLuint colorBuffers[2], GLuint pingpongColorbuffers[2])
-{
-
-    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glm::mat4 projection = glm::perspective(camera.Zoom, (GLfloat)SCR_WIDTH / (GLfloat)SCR_HEIGHT, 0.1f, 100.0f);
-    glm::mat4 view = camera.GetViewMatrix();
-    glm::mat4 model;
-    shader.Use();
-    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-    glActiveTexture(GL_TEXTURE0);
-    //        glBindTexture(GL_TEXTURE_2D, woodTexture);
-    // - set lighting uniforms
-    for (GLuint i = 0; i < lightPositions.size(); i++)
-    {
-        glUniform3fv(glGetUniformLocation(shader.Program, ("lights[" + std::to_string(i) + "].Position").c_str()), 1, &lightPositions[i][0]);
-        glUniform3fv(glGetUniformLocation(shader.Program, ("lights[" + std::to_string(i) + "].Color").c_str()), 1, &lightColors[i][0]);
-    }
-    glUniform3fv(glGetUniformLocation(shader.Program, "viewPos"), 1, &camera.Position[0]);
-
-    RenderFloor1(shader);
-
-
-
-    // - finally show all the light sources as bright cubes
-    shaderLight.Use();
-    glUniformMatrix4fv(glGetUniformLocation(shaderLight.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-    glUniformMatrix4fv(glGetUniformLocation(shaderLight.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-
-    for (GLuint i = 0; i < lightPositions.size(); i++)
-    {
-        model = glm::mat4();
-        model = glm::translate(model, glm::vec3(lightPositions[i]));
-        model = glm::scale(model, glm::vec3(0.5f));
-        glUniformMatrix4fv(glGetUniformLocation(shaderLight.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        glUniform3fv(glGetUniformLocation(shaderLight.Program, "lightColor"), 1, &lightColors[i][0]);
-        RenderCube();
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    // 2. Blur bright fragments w/ two-pass Gaussian Blur
-    GLboolean horizontal = true, first_iteration = true;
-    GLuint amount = 10;
-    shaderBlur.Use();
-    for (GLuint i = 0; i < amount; i++)
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
-        glUniform1i(glGetUniformLocation(shaderBlur.Program, "horizontal"), horizontal);
-        glBindTexture(GL_TEXTURE_2D, first_iteration ? colorBuffers[1] : pingpongColorbuffers[!horizontal]);  // bind texture of other framebuffer (or scene if first iteration)
-        RenderQuad();
-        horizontal = !horizontal;
-        if (first_iteration)
-            first_iteration = false;
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    // 2. Now render floating point color buffer to 2D quad and tonemap HDR colors to default framebuffer's (clamped) color range
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glClearColor(0.5,0.5,0.5,1);
-    shaderBloomFinal.Use();
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, colorBuffers[0]);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[!horizontal]);
-    glUniform1i(glGetUniformLocation(shaderBloomFinal.Program, "bloom"), bloom);
-    glUniform1f(glGetUniformLocation(shaderBloomFinal.Program, "exposure"), exposure);
-    RenderQuad();
-
-    //___-------
 }
 
 void initFloor1(){
@@ -648,29 +541,94 @@ void initFloor1(){
     glBindVertexArray(0);
 
     // Load textures
-    cubeTexture = loadTexture("resources/textures/marble.jpg");
+    cubeTexture = loadTexture("resources/textures/container2.png");
     floorTexture = loadTexture("resources/textures/marble.jpg");
 }
 
 void initGrass(){
 
-    glm::vec3 translations[NUM_INSTANCES];
-    int start = NUM_INSTANCES/10;
-    int index = 0;
-    for(GLint y = -start; y < start; y += 2)
+    // Generate a large list of semi-random model transformation matrices
+    glm::mat4* modelMatrices;
+    modelMatrices = new glm::mat4[NUM_INSTANCES];
+    srand(glfwGetTime()); // initialize random seed
+    for(GLuint i = 0; i < NUM_INSTANCES; i++)
     {
-        for(GLint x = -start; x < start; x += 2)
-        {
-            glm::vec3 translation;
-            translation.x = x;//(GLfloat)x + offset;
-            translation.y = 0;
-            translation.z = y;//(GLfloat)y + offset;
-            translations[index++] = translation;
-        }
+        glm::mat4 model;
+        glm::vec3 translation(rand()%30 - 10, FLOOR1_Y + 0.5, rand()%6 + 10);
+        //GLfloat size = (rand()%50);
+        model = glm::translate(model, translation);
+        model = glm::scale(model, glm::vec3((1, 1, 1)));
+        modelMatrices[i] = model;
     }
 
-    glGenBuffers(1, &instanceVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    // Set transformation matrices as an instance vertex attribute (with divisor 1)
+    // NOTE: We're cheating a little by taking the, now publicly declared, VAO of the model's mesh(es) and adding new vertexAttribPointers
+    // Normally you'd want to do this in a more organized fashion, but for learning purposes this will do.
+    for(GLuint i = 0; i < grass->meshes.size(); i++)
+    {
+        GLuint VAO = grass->meshes[i].VAO;
+        GLuint buffer;
+        glBindVertexArray(VAO);
+        glGenBuffers(1, &buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, buffer);
+        glBufferData(GL_ARRAY_BUFFER, NUM_INSTANCES * sizeof(glm::mat4), &modelMatrices[0], GL_STATIC_DRAW);
+        // Set attribute pointers for matrix (4 times vec4)
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)0);
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)(sizeof(glm::vec4)));
+        glEnableVertexAttribArray(5);
+        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)(2 * sizeof(glm::vec4)));
+        glEnableVertexAttribArray(6);
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)(3 * sizeof(glm::vec4)));
+
+        glVertexAttribDivisor(3, 1);
+        glVertexAttribDivisor(4, 1);
+        glVertexAttribDivisor(5, 1);
+        glVertexAttribDivisor(6, 1);
+
+        glBindVertexArray(0);
+    }
+
+}
+
+void RenderGrass(Shader& shader){
+
+    // Draw meteorites
+    shader.Use();
+
+    glm::mat4 model;
+    glm::mat4 view = camera.GetViewMatrix();
+    glm::mat4 projection = glm::perspective(camera.Zoom, (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+    glBindTexture(GL_TEXTURE_2D, grass->textures_loaded[0].id);
+    for(GLuint i = 0; i < grass->meshes.size(); i++)
+    {
+        glBindVertexArray(grass->meshes[i].VAO);
+        glDrawElementsInstanced(GL_TRIANGLES, grass->meshes[i].vertices.size(), GL_UNSIGNED_INT, 0, NUM_INSTANCES);
+        glBindVertexArray(0);
+    }
+}
+
+void initFlame(){
+
+    glm::vec3 translations[NUM_FLAME_INSTANCES];
+    int index = 0;
+
+    for(GLint y = 0; y < NUM_FLAME_INSTANCES; y++)
+    {
+        glm::vec3 translation;
+        translation.x =  rand()%30 - 15;
+        translation.y = FLOOR1_Y + 0.5;
+        translation.z =  rand()%6 + 3;
+        translations[index++] = translation;
+    }
+
+    glGenBuffers(1, &flame_instanceVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, flame_instanceVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * NUM_INSTANCES, &translations[0], GL_STATIC_DRAW);
 
     GLfloat transparentVertices[] = {
@@ -685,10 +643,10 @@ void initGrass(){
     };
 
     // Setup transparent plane VAO
-    glGenVertexArrays(1, &transparentVAO);
-    glGenBuffers(1, &transparentVBO);
-    glBindVertexArray(transparentVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, transparentVBO);
+    glGenVertexArrays(1, &flameVAO);
+    glGenBuffers(1, &flameVBO);
+    glBindVertexArray(flameVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, flameVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
@@ -696,10 +654,13 @@ void initGrass(){
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
     glBindVertexArray(0);
 
-    transparentTexture = loadTexture("resources/textures/grass.png", true);
+    for (int i = 1; i <= NUM_FLAME_FRAMES; ++i) {
+        flameTexture[i-1] = loadTexture("resources/textures/flames/tmp-" + std::to_string(i) + ".png", true);
+    }
+
 }
 
-void RenderGrass(Shader& shader){
+void RenderFlame(Shader& shader){
 
     shader.Use();
     glm::mat4 model;
@@ -710,19 +671,19 @@ void RenderGrass(Shader& shader){
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
     // Vegetation
-    glBindVertexArray(transparentVAO);
+    glBindVertexArray(flameVAO);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, transparentTexture);
+    glBindTexture(GL_TEXTURE_2D, flameTexture[++flameIndex%=NUM_FLAME_FRAMES]);
 
     glEnableVertexAttribArray(3);
-    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, flame_instanceVBO);
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
-    glVertexAttribDivisor(6, 1);
+    glVertexAttribDivisor(3, 1);
 
-    //glDrawArrays(GL_TRIANGLES, 0, 6);
-    glDrawArraysInstanced(GL_TRIANGLES, 0, 30, NUM_INSTANCES);
+    glDrawArraysInstanced(GL_TRIANGLES, 0, 30, NUM_FLAME_INSTANCES);
     glBindVertexArray(0);
 }
+
 
 void RenderFloor1(Shader &shader){
 
@@ -755,12 +716,10 @@ void RenderModels(Shader &shader){
 
     // Draw the loaded model
     glm::mat4 model;
-    model = glm::translate(model, glm::vec3(2.0f, FLOOR1_Y+1.1, 2.0f)); // Translate it down a bit so it's at the center of the scene
+    model = glm::translate(model, glm::vec3(2.0f, FLOOR1_Y+FLOOR_OFFSET, 2.0f)); // Translate it down a bit so it's at the center of the scene
     //model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// It's a bit too big for our scene, so scale it down
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
     floor1->Draw(shader);
-    //    bool toReturn=bulletDetectCollision(floor1,projection*view*model);
-
 
     /*--------------------------DRAWING OBJ------------------*/
 
@@ -770,36 +729,55 @@ void RenderModels(Shader &shader){
     model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// It's a bit too big for our scene, so scale it down
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
     monster->Draw(shader);
-    //    bulletDetectCollision(monster,projection * view * model);
-
-    /*--------------------------DRAWING OBJ------------------*/
-}
-
-bool detectModelCollision(){
-
-
-    glm::mat4 view = camera.GetViewMatrix();
-    glm::mat4 projection = glm::perspective(camera.Zoom, (float)SCR_WIDTH/(float)SCR_HEIGHT, 0.1f, 100.0f);
-
-    // Draw the loaded model
-    glm::mat4 model;
-    model = glm::translate(model, glm::vec3(2.0f, FLOOR1_Y+1.1, 2.0f)); // Translate it down a bit so it's at the center of the scene
-    //model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// It's a bit too big for our scene, so scale it down
-    bool toReturn=bulletDetectCollision(floor1,projection*view*model);
-
 
     /*--------------------------DRAWING OBJ------------------*/
 
-    // Draw the loaded model
+    // Draw the loaded fences
+    for (int i = 0; i < fences.size(); ++i) {
+        model = glm::mat4();
+        model = glm::translate(model, fences[i]);
+        //model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        fence->Draw(shader);
+    }
+
+    /*********************DRAW TREES************/
     model = glm::mat4();
-    model = glm::translate(model, glm::vec3(2.0f, -0.50f, 2.0f)); // Translate it down a bit so it's at the center of the scene
-    model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// It's a bit too big for our scene, so scale it down
-    //    bulletDetectCollision(monster,projection * view * model);
+    model = glm::translate(model, glm::vec3(10.0f, FLOOR1_Y, 2.0f)); // Translate it down a bit so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(0.7f, 0.7f, 0.7f));	// It's a bit too big for our scene, so scale it down
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+    tree->Draw(shader);
 
-    /*--------------------------DRAWING OBJ------------------*/
-    return toReturn;
+    model = glm::mat4();
+    model = glm::translate(model, glm::vec3(-10.0f, FLOOR1_Y, -5.0f)); // Translate it down a bit so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(0.7f, 0.7f, 0.7f));	// It's a bit too big for our scene, so scale it down
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+    tree->Draw(shader);
+    /********************* END DRAW TREES************/
+
+    /******************* Elevator base *******************/
+    model = glm::mat4();
+    GLfloat diff = (cos(glfwGetTime())*4  + FLOOR1_Y) + FLOOR1_Y + 0.6;
+    GLfloat diffW = diff;
+    diff = diff <= 8 ? diff : 8;
+    model = glm::translate(model,glm::vec3(0, diff,-5.2));
+    model = glm::scale(model,glm::vec3(3,0.2,3));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, cubeTexture);
+    RenderCube();
+
+    model = glm::mat4();
+    model = glm::translate(model,glm::vec3(-1.1, FLOOR1_Y + 1,-7));
+    model = glm::rotate(model,1.56f,glm::vec3(0,1,0));
+    model = glm::scale(model,glm::vec3(0.3,0.3,0.5));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+    well->Draw(shader);
+    model = glm::rotate(model,diffW,glm::vec3(0,0,1));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+    wheel->Draw(shader);
+    /******************* draw Elevator base **************/
 }
-
 
 void RenderScene(Shader &shader)
 {
@@ -825,6 +803,7 @@ void RenderScene(Shader &shader)
     model = glm::scale(model, glm::vec3(0.5));
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
     RenderCube();
+
 }
 
 
@@ -936,13 +915,14 @@ void RenderCube()
 // This function loads a texture from file. Note: texture loading functions like these are usually
 // managed by a 'Resource Manager' that manages all resources (like textures, models, audio).
 // For learning purposes we'll just define it as a utility function.
-GLuint loadTexture(GLchar* path, GLboolean alpha)
+GLuint loadTexture(string path, GLboolean alpha)
 {
     //Generate texture ID and load texture data
     GLuint textureID;
     glGenTextures(1, &textureID);
     int width,height;
-    unsigned char* image = SOIL_load_image(path, &width, &height, 0, alpha ? SOIL_LOAD_RGBA : SOIL_LOAD_RGB);
+    const char* p = path.c_str();
+    unsigned char* image = SOIL_load_image(p, &width, &height, 0, alpha ? SOIL_LOAD_RGBA : SOIL_LOAD_RGB);
     // Assign texture to ID
     glBindTexture(GL_TEXTURE_2D, textureID);
     glTexImage2D(GL_TEXTURE_2D, 0, alpha ? GL_RGBA : GL_RGB, width, height, 0, alpha ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, image);
@@ -1022,3 +1002,78 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     camera.ProcessMouseScroll(yoffset);
 }
+
+/*void initGrass(){
+
+    glm::vec3 translations[NUM_INSTANCES];
+    int start = sqrt(NUM_INSTANCES);
+    int index = 0;
+
+    for(GLint y = 0; y < start; y += 2)
+    {
+        for(GLint x = 0; x < start; x += 2)
+        {
+            glm::vec3 translation;
+            translation.x =  rand()%30 - 15;
+            translation.y = FLOOR1_Y + 0.5;
+            translation.z =  rand()%6 + 3;
+            translations[index++] = translation;
+        }
+    }
+
+    glGenBuffers(1, &instanceVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * NUM_INSTANCES, &translations[0], GL_STATIC_DRAW);
+
+
+    GLfloat transparentVertices[] = {
+        // Positions         // Texture Coords (swapped y coordinates because texture is flipped upside down)
+        0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+        0.0f, -0.5f,  0.0f,  0.0f,  1.0f,
+        1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+
+        0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+        1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+        1.0f,  0.5f,  0.0f,  1.0f,  0.0f
+    };
+
+    // Setup transparent plane VAO
+    glGenVertexArrays(1, &transparentVAO);
+    glGenBuffers(1, &transparentVBO);
+    glBindVertexArray(transparentVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, transparentVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    glBindVertexArray(0);
+
+    transparentTexture = loadTexture("resources/textures/thorn.png", true);
+}
+
+void RenderGrass(Shader& shader){
+
+    shader.Use();
+    glm::mat4 model;
+    glm::mat4 view = camera.GetViewMatrix();
+    glm::mat4 projection = glm::perspective(camera.Zoom, (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+    // Vegetation
+    glBindVertexArray(transparentVAO);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, transparentTexture);
+
+    glEnableVertexAttribArray(3);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
+    glVertexAttribDivisor(3, 1);
+
+    //glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDrawArraysInstanced(GL_TRIANGLES, 0, 30, NUM_INSTANCES);
+    glBindVertexArray(0);
+
+}*/

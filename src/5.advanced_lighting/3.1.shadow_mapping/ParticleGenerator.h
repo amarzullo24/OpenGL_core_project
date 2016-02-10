@@ -18,9 +18,11 @@
 #include <learnopengl/camera.h>
 
 
+#include <GLFW/glfw3.h>
+
 // Represents a single particle and its state
 struct Particle {
-    glm::vec2 Position, Velocity;
+    glm::vec3 Position, Velocity;
     glm::vec4 Color;
     GLfloat Life;
 
@@ -37,7 +39,7 @@ public:
     // Constructor
     ParticleGenerator(Shader shader, GLuint amount, Camera*);
     // Update all particles
-    void Update(GLfloat dt, GLuint newParticles, glm::vec2 offset = glm::vec2(1.0f, 0.0f));
+    void Update(GLfloat dt, GLuint newParticles, glm::vec3 offset = glm::vec3(1.0f, 0.0f, 0.0f));
     // Render all particles
     void Draw();
 
@@ -55,7 +57,7 @@ private:
     // Returns the first Particle index that's currently unused e.g. Life <= 0.0f or 0 if no particle is currently inactive
     GLuint firstUnusedParticle();
     // Respawns particle
-    void respawnParticle(Particle &particle, glm::vec2 position,glm::vec2 offset = glm::vec2(0.0f, 0.0f));
+    void respawnParticle(Particle &particle, glm::vec3 position,glm::vec3 offset = glm::vec3(0.0f, 0.0f, 0.0f));
 };
 
 #endif

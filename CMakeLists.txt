@@ -175,15 +175,10 @@ foreach(CHAPTER ${CHAPTERS})
 
 
 
+
         )
 
         add_executable(${DEMO} ${SOURCE}
-
-            resources/textures/wood.png
-            resources/objects/planet/planet_Quom1200.png
-
-            resources/textures/grass.jpg
-            resources/textures/metal.png
 
         )
 

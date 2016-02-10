@@ -14,7 +14,8 @@ ParticleGenerator::ParticleGenerator(Shader shader, GLuint amount, Camera * came
     this->init();
 }
 
-void ParticleGenerator::Update(GLfloat dt, GLuint newParticles, glm::vec2 offset)
+
+void ParticleGenerator::Update(GLfloat dt, GLuint newParticles, glm::vec3 offset)
 {
     // Add new particles
     for (GLuint i = 0; i < newParticles; ++i)
@@ -26,7 +27,8 @@ void ParticleGenerator::Update(GLfloat dt, GLuint newParticles, glm::vec2 offset
     for (GLuint i = 0; i < this->amount; ++i)
     {
         Particle &p = this->particles[i];
-        p.Life -= dt; // reduce life
+
+       // p.Life -= dt; // reduce life
         if (p.Life > 0.0f)
         {	// particle is alive, thus update
             p.Position -= p.Velocity * dt;
@@ -39,14 +41,17 @@ void ParticleGenerator::Update(GLfloat dt, GLuint newParticles, glm::vec2 offset
 void ParticleGenerator::Draw()
 {
     // Use additive blending to give it a 'glow' effect
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     this->shader.Use();
 
     glm::mat4 model;
     glm::mat4 view = camera->GetViewMatrix();
-    glm::mat4 projection = glm::perspective(camera->Zoom, (float)1024 / (float)768, 0.1f, 100.0f);
+
+    glm::mat4 projection = glm::perspective(camera->Zoom, (float)1024 / (float)768, 1.0f, 100.0f);
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
 
@@ -55,14 +60,22 @@ void ParticleGenerator::Draw()
         if (particle.Life > 0.0f)
         {
             glBindVertexArray(this->VAO);
-            glUniformMatrix4fv(glGetUniformLocation(shader.Program, "offset"), 1, GL_FALSE, glm::value_ptr(particle.Position));
+
+
+            //std::cout<<particles[0].Position[0]<<" "<<particles[0].Position[1]<<" "<<particles[0].Color[0]<<" "<<particle.Color[1]<<std::endl;
+            model = glm::translate(model,particle.Position);
+            glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+            glUniformMatrix2fv(glGetUniformLocation(shader.Program, "offset"), 1, GL_FALSE, glm::value_ptr(particle.Position));
             glUniformMatrix4fv(glGetUniformLocation(shader.Program, "color"), 1, GL_FALSE, glm::value_ptr(particle.Color));
+
             glDrawArrays(GL_TRIANGLES, 0, 6);
             glBindVertexArray(0);
         }
     }
     // Don't forget to reset to default blending mode
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void ParticleGenerator::init()
@@ -78,12 +91,13 @@ void ParticleGenerator::init()
         1.0f, 1.0f, 1.0f, 1.0f,
         1.0f, 0.0f, 1.0f, 0.0f
     };
+
     glGenVertexArrays(1, &this->VAO);
     glGenBuffers(1, &VBO);
     glBindVertexArray(this->VAO);
     // Fill mesh buffer
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(particle_quad), particle_quad, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(particle_quad), particle_quad, GL_DYNAMIC_DRAW);
     // Set mesh attributes
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
@@ -117,12 +131,14 @@ GLuint ParticleGenerator::firstUnusedParticle()
     return 0;
 }
 
-void ParticleGenerator::respawnParticle(Particle &particle, glm::vec2 position ,glm::vec2 offset)
+
+void ParticleGenerator::respawnParticle(Particle &particle, glm::vec3 position ,glm::vec3 offset)
 {
     GLfloat random = ((rand() % 100) - 50) / 10.0f;
     GLfloat rColor = 0.5 + ((rand() % 100) / 100.0f);
     particle.Position = position + random + offset;
     particle.Color = glm::vec4(1, 0, 0, 1.0f);
     particle.Life = 1.0f;
-    particle.Velocity = glm::vec2(1.0f,1.0f) + 0.1f;
+
+    particle.Velocity = glm::vec3(1.0f,1.0f,0.0f) + 0.1f;
 }
