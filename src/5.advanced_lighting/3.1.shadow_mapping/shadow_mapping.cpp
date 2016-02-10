@@ -20,7 +20,7 @@
 
 #include <string>
 
-//#include "ParticleGenerator.h"
+#include "ParticleGenerator.h"
 
 // Properties
 const GLuint SCR_WIDTH = 1024, SCR_HEIGHT = 768;
@@ -84,8 +84,8 @@ Model* wheel;
 vector<glm::vec3> fences;
 
 // Camera
-Camera camera(glm::vec3(10.0f, FLOOR1_Y + 1, 20.0f));
-//Camera camera(glm::vec3(3,0,0));
+//Camera camera(glm::vec3(10.0f, FLOOR1_Y + 1, 20.0f));
+Camera camera(glm::vec3(3,0,0));
 
 int main()
 {
@@ -219,7 +219,7 @@ int main()
     fences.push_back(glm::vec3(7.0f, FLOOR1_Y - 1.0, 16.0f));
     fences.push_back(glm::vec3(4.0f, FLOOR1_Y - 1.0, 10.5f));
 
-    //ParticleGenerator generator(particle_shader,5,&camera);
+    ParticleGenerator generator(particle_shader,10,&camera);
 
 
     // Game loop
@@ -325,8 +325,8 @@ int main()
         RenderGrass(grass_shader);
         //RenderFlame(flame_shader);
 
-        //generator.Update(0.1f,10,glm::vec2(1,1));
-        //generator.Draw();
+        generator.Update(0.1f,10);
+        generator.Draw();
         // Swap the buffers
         glfwSwapBuffers(window);
     }

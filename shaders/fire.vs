@@ -8,13 +8,13 @@ uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
 
-uniform vec2 offset;
 uniform vec4 color;
+uniform vec3 offset;
 
 void main()
 {
-    float scale = 1.0f;
+    float scale = 0.1f;
     TexCoords = vertex.zw;
     ParticleColor = color;
-    gl_Position = projection * view  * model * vec4((vertex.xy * scale) + offset, 0.0, 1.0);
+    gl_Position = projection * view  * model * vec4(vec3(vertex.xy,0.0f) * scale + offset, 1.0f);
 }

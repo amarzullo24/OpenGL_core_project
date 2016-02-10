@@ -10,5 +10,5 @@ void main()
     //if(ParticleColor.a < 0.1)
       //  discard;
 
-    color = ParticleColor;//(texture(sprite, TexCoords) * ParticleColor);
+    color = vec4(1,0,0,1);//(texture(sprite, TexCoords) * ParticleColor);
 }
