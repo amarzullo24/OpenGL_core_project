@@ -44,6 +44,9 @@ void initGrass();
 void initFlame();
 
 
+void checkTeleports(std::vector<glm::vec3> lightPositions);
+
+
 
 // Delta
 GLfloat deltaTime = 0.0f;
@@ -83,14 +86,18 @@ Model* wheel;
 
 vector<glm::vec3> fences;
 
-// Camera
-//Camera camera(glm::vec3(10.0f, FLOOR1_Y + 1, 20.0f));
-Camera camera(glm::vec3(3,0,0));
 
 // Options
 GLboolean bloom = true; // Change with 'Space'
 GLfloat exposure = 1.0f; // Change with Q and E
 
+glm::vec3 teleport_room_position(7.81814,  0.520741 , -0.166235);
+glm::vec3 positions_to_teleport[]={glm::vec3(-0.173773  ,-0.515819 , -1.0192),
+                                   glm::vec3(1.77708 , 4.18544 , 2.83903),
+                                   glm::vec3(0.675843 , 4.02432  ,20.4425),
+                                   glm::vec3(-0.17888 , 4.275,  -19.0614) };
+
+Camera camera(teleport_room_position);
 int main()
 {
     // Init GLFW
@@ -207,7 +214,7 @@ int main()
 
     /*-------------------Load models--------------------*/
 
-//    monster = new Model("resources/objects/nanosuit/nanosuit.obj");
+    //    monster = new Model("resources/objects/nanosuit/nanosuit.obj");
     floor1 = new Model("resources/objects/floor1/house.obj");
     grass = new Model("resources/objects/grass/Grass-small.obj");
     fence = new Model("resources/objects/fence/fence.obj");
@@ -246,8 +253,17 @@ int main()
     lightPositions.push_back(glm::vec3(14.0f, 0.5f, -3.0f));
     lightPositions.push_back(glm::vec3(13.0f, 0.5f, 1.0f));
     lightPositions.push_back(glm::vec3(12.8f, 2.4f, -1.0f));
+    lightPositions.push_back(glm::vec3(-0.173773  ,-0.515819 , -2.0192));
+    lightPositions.push_back(glm::vec3(1.27708 , 4.18544 , 2.83903));
+    lightPositions.push_back(glm::vec3(0.675843 , 4.02432  ,23.4425));
+    lightPositions.push_back(glm::vec3(-0.17888 , 4.275,  -20.0614));
+
     // - Colors
     std::vector<glm::vec3> lightColors;
+    lightColors.push_back(glm::vec3(52.0f, 52.0f, 52.0f));
+    lightColors.push_back(glm::vec3(50.5f, 0.0f, 0.0f));
+    lightColors.push_back(glm::vec3(0.0f, 0.0f, 50.5f));
+    lightColors.push_back(glm::vec3(0.0f, 51.5f, 0.0f));
     lightColors.push_back(glm::vec3(52.0f, 52.0f, 52.0f));
     lightColors.push_back(glm::vec3(50.5f, 0.0f, 0.0f));
     lightColors.push_back(glm::vec3(0.0f, 0.0f, 50.5f));
@@ -327,6 +343,9 @@ int main()
         // Check and call events
         glfwPollEvents();
         Do_Movement();
+
+
+        checkTeleports(lightPositions);
 
         glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -503,12 +522,11 @@ int main()
         RenderQuad();
 
 
-
         // Swap the buffers
         glfwSwapBuffers(window);
     }
 
-//    delete monster;
+    //    delete monster;
     delete floor1;
     delete grass;
     delete moon;
@@ -517,6 +535,33 @@ int main()
 
     glfwTerminate();
     return 0;
+}
+
+void checkTeleports(std::vector<glm::vec3> lightPositions)
+{
+    for(int i=0;i<lightPositions.size();i++)
+        if(camera.Position[0]-lightPositions[i][0]<=0.4 &&
+                camera.Position[0]-lightPositions[i][0]>=-0.4 &&
+                camera.Position[1]-lightPositions[i][1]<=0.4 &&
+                camera.Position[1]-lightPositions[i][1]>=-0.4 &&
+                camera.Position[2]-lightPositions[i][2]<=0.4 &&
+                camera.Position[2]-lightPositions[i][2]>=-0.4)
+        {
+
+            static float dt_zoom=0;
+            dt_zoom+=0.5;
+            camera.Zoom=dt_zoom;
+            if(dt_zoom>=10.0f)
+            {
+                dt_zoom=45;
+                camera.Zoom=45;
+                if(i<4)
+                    camera.Position=positions_to_teleport[i];
+                else
+                    camera.Position=teleport_room_position;
+                dt_zoom=0;
+            }
+        }
 }
 
 void initFloor1(){
@@ -727,12 +772,12 @@ void RenderModels(Shader &shader){
 
     /*--------------------------DRAWING OBJ------------------*/
 
-//    // Draw the loaded model
-//    model = glm::mat4();
-//    model = glm::translate(model, glm::vec3(2.0f, -0.50f, 2.0f)); // Translate it down a bit so it's at the center of the scene
-//    model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// It's a bit too big for our scene, so scale it down
-//    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-//    monster->Draw(shader);
+    //    // Draw the loaded model
+    //    model = glm::mat4();
+    //    model = glm::translate(model, glm::vec3(2.0f, -0.50f, 2.0f)); // Translate it down a bit so it's at the center of the scene
+    //    model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// It's a bit too big for our scene, so scale it down
+    //    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+    //    monster->Draw(shader);
 
     /*--------------------------DRAWING OBJ------------------*/
 
@@ -962,6 +1007,8 @@ void Do_Movement()
         shadows = !shadows;
         keysPressed[GLFW_KEY_SPACE] = true;
     }
+    if (keys[GLFW_KEY_B])
+        std::cout<<camera.Position[0]<<"  "<<camera.Position[1]<<"  "<<camera.Position[2]<<"  "<<endl;
 }
 
 GLfloat lastX = 400, lastY = 300;
