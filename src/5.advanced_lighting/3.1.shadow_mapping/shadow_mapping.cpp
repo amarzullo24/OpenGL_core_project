@@ -238,10 +238,10 @@ int main()
     // Light sources
     // - Positions
     std::vector<glm::vec3> lightPositions;
-    lightPositions.push_back(glm::vec3(0.0f, 0.5f, 1.5f)); // back light
-    lightPositions.push_back(glm::vec3(-4.0f, 0.5f, -3.0f));
-    lightPositions.push_back(glm::vec3(3.0f, 0.5f, 1.0f));
-    lightPositions.push_back(glm::vec3(-.8f, 2.4f, -1.0f));
+    lightPositions.push_back(glm::vec3(10.0f, 0.5f, 1.5f)); // back light
+    lightPositions.push_back(glm::vec3(14.0f, 0.5f, -3.0f));
+    lightPositions.push_back(glm::vec3(13.0f, 0.5f, 1.0f));
+    lightPositions.push_back(glm::vec3(12.8f, 2.4f, -1.0f));
     // - Colors
     std::vector<glm::vec3> lightColors;
     lightColors.push_back(glm::vec3(2.0f, 2.0f, 2.0f));
