@@ -299,7 +299,6 @@ int main()
 
     //------------------------
 
-    //_______
     shaderBloomFinal.Use();
     glUniform1i(glGetUniformLocation(shaderBloomFinal.Program, "scene"), 0);
     glUniform1i(glGetUniformLocation(shaderBloomFinal.Program, "bloomBlur"), 1);
@@ -375,8 +374,6 @@ int main()
     }
 
 
-    //______
-
     shaderShadow.Use();
 
     glClearColor(0.0f,0.0f,0.0f,1.0f);
@@ -396,153 +393,150 @@ int main()
 
 
         glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
-       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-         glm::mat4 projection = glm::perspective(camera.Zoom, (GLfloat)SCR_WIDTH / (GLfloat)SCR_HEIGHT, 0.1f, 100.0f);
-         glm::mat4 view = camera.GetViewMatrix();
-         glm::mat4 model;
-         shader.Use();
-         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-         glActiveTexture(GL_TEXTURE0);
-         // - set lighting uniforms
-         for (GLuint i = 0; i < lightPositions.size(); i++)
-         {
-             glUniform3fv(glGetUniformLocation(shader.Program, ("lights[" + std::to_string(i) + "].Position").c_str()), 1, &lightPositions[i][0]);
-             glUniform3fv(glGetUniformLocation(shader.Program, ("lights[" + std::to_string(i) + "].Color").c_str()), 1, &lightColors[i][0]);
-         }
-         glUniform3fv(glGetUniformLocation(shader.Program, "viewPos"), 1, &camera.Position[0]);
+        glm::mat4 projection = glm::perspective(camera.Zoom, (GLfloat)SCR_WIDTH / (GLfloat)SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 view = camera.GetViewMatrix();
+        glm::mat4 model;
+        shader.Use();
+        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glActiveTexture(GL_TEXTURE0);
+        // - set lighting uniforms
+        for (GLuint i = 0; i < lightPositions.size(); i++)
+        {
+            glUniform3fv(glGetUniformLocation(shader.Program, ("lights[" + std::to_string(i) + "].Position").c_str()), 1, &lightPositions[i][0]);
+            glUniform3fv(glGetUniformLocation(shader.Program, ("lights[" + std::to_string(i) + "].Color").c_str()), 1, &lightColors[i][0]);
+        }
+        glUniform3fv(glGetUniformLocation(shader.Program, "viewPos"), 1, &camera.Position[0]);
 
-         /********************************ORIGINALE**************************/
+        /********************************ORIGINALE**************************/
 
-         shaderShadow.Use();
-         RenderModels(model_shader);
+        shaderShadow.Use();
+        RenderModels(model_shader);
 
-         // Change light position over time
-         lightPos.z = cos(glfwGetTime()) * 2.0f;
+        // Change light position over time
+        lightPos.z = cos(glfwGetTime()) * 2.0f;
 
-         // 1. Render depth of scene to texture (from light's perspective)
-         // - Get light projection/view matrix.
-         glm::mat4 lightProjection, lightView;
-         glm::mat4 lightSpaceMatrix;
-         GLfloat near_plane = 1.0f, far_plane = 7.5f;
-         lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-         lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(1.0));
-         lightSpaceMatrix = lightProjection * lightView;
+        // 1. Render depth of scene to texture (from light's perspective)
+        // - Get light projection/view matrix.
+        glm::mat4 lightProjection, lightView;
+        glm::mat4 lightSpaceMatrix;
+        GLfloat near_plane = 1.0f, far_plane = 7.5f;
+        lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+        lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(1.0));
+        lightSpaceMatrix = lightProjection * lightView;
 
-         // - now render scene from light's point of view
-         simpleDepthShader.Use();
-         glUniformMatrix4fv(glGetUniformLocation(simpleDepthShader.Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
-         glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-         glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-         glClear(GL_DEPTH_BUFFER_BIT);
-         RenderScene(simpleDepthShader);
-         glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+        // - now render scene from light's point of view
+        simpleDepthShader.Use();
+        glUniformMatrix4fv(glGetUniformLocation(simpleDepthShader.Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+        glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+        glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        RenderScene(simpleDepthShader);
+        glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
 
-         // 2. Render scene as normal
-         glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-         shaderShadow.Use();
-           projection = glm::perspective(camera.Zoom, (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-          view = camera.GetViewMatrix();
-         glUniformMatrix4fv(glGetUniformLocation(shaderShadow.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-         glUniformMatrix4fv(glGetUniformLocation(shaderShadow.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-         // Set light uniforms
-         glUniform3fv(glGetUniformLocation(shaderShadow.Program, "lightPos"), 1, &lightPos[0]);
-         glUniform3fv(glGetUniformLocation(shaderShadow.Program, "viewPos"), 1, &camera.Position[0]);
-         glUniformMatrix4fv(glGetUniformLocation(shaderShadow.Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
-         // Enable/Disable shadows by pressing 'SPACE'
-         glUniform1i(glGetUniformLocation(shaderShadow.Program, "shadows"), shadows);
-         glActiveTexture(GL_TEXTURE0);
-         glBindTexture(GL_TEXTURE_2D, woodTexture);
-         glActiveTexture(GL_TEXTURE1);
-         glBindTexture(GL_TEXTURE_2D, depthMap);
+        // 2. Render scene as normal
+        glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+        shaderShadow.Use();
+        projection = glm::perspective(camera.Zoom, (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        view = camera.GetViewMatrix();
+        glUniformMatrix4fv(glGetUniformLocation(shaderShadow.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(glGetUniformLocation(shaderShadow.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        // Set light uniforms
+        glUniform3fv(glGetUniformLocation(shaderShadow.Program, "lightPos"), 1, &lightPos[0]);
+        glUniform3fv(glGetUniformLocation(shaderShadow.Program, "viewPos"), 1, &camera.Position[0]);
+        glUniformMatrix4fv(glGetUniformLocation(shaderShadow.Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+        // Enable/Disable shadows by pressing 'SPACE'
+        glUniform1i(glGetUniformLocation(shaderShadow.Program, "shadows"), shadows);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, woodTexture);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, depthMap);
 
-         // Room cube
+        // Room cube
 
-         model = glm::scale(model, glm::vec3(10.0,6.9,10));
-         glUniformMatrix4fv(glGetUniformLocation(shaderShadow.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-         glUniform1i(glGetUniformLocation(shaderShadow.Program, "reverse_normals"), 1); // A small little hack to invert normals when drawing cube from the inside so lighting still works.
-         RenderCube();
-         glUniform1i(glGetUniformLocation(shaderShadow.Program, "reverse_normals"), 0); // And of course disable it
+        model = glm::scale(model, glm::vec3(10.0,6.9,10));
+        glUniformMatrix4fv(glGetUniformLocation(shaderShadow.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        glUniform1i(glGetUniformLocation(shaderShadow.Program, "reverse_normals"), 1); // A small little hack to invert normals when drawing cube from the inside so lighting still works.
+        RenderCube();
+        glUniform1i(glGetUniformLocation(shaderShadow.Program, "reverse_normals"), 0); // And of course disable it
 
-         /////////////////
+        /////////////////
 
-         shaderCube.Use();
-           projection = glm::perspective(camera.Zoom, (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-          view = camera.GetViewMatrix();
-         glUniformMatrix4fv(glGetUniformLocation(shaderCube.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-         glUniformMatrix4fv(glGetUniformLocation(shaderCube.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        shaderCube.Use();
+        projection = glm::perspective(camera.Zoom, (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        view = camera.GetViewMatrix();
+        glUniformMatrix4fv(glGetUniformLocation(shaderCube.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(glGetUniformLocation(shaderCube.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
-         // Room cube
-         model =glm::mat4();
-         model = glm::scale(model, glm::vec3(100.0,100.9,100));
-         glUniformMatrix4fv(glGetUniformLocation(shaderCube.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        //sky cube
+        model =glm::mat4();
+        model = glm::scale(model, glm::vec3(100.0,100.9,100));
+        glUniformMatrix4fv(glGetUniformLocation(shaderCube.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
-         RenderCube();
-
-
-         /////////////////
-         RenderScene(shaderShadow);
-         RenderFloor1(floor1_shader);
+        RenderCube();
 
 
-         // Set light uniforms
-         lightProjection = glm::perspective(45.0f, (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT, 1.0f, 2.0f);
-         lightView = glm::lookAt(scndlightPos, glm::vec3(0.0f), glm::vec3(1.0));
-         lightSpaceMatrix = lightProjection * lightView;
-         glUniform3fv(glGetUniformLocation(shaderShadow.Program, "lightPos"), 1, &scndlightPos[0]);
-         glUniformMatrix4fv(glGetUniformLocation(shaderShadow.Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+        /////////////////
+        RenderScene(shaderShadow);
+        RenderFloor1(floor1_shader);
 
-         RenderGrass(grass_shader);
 
-         /******************************** end ORIGINALE**************************/
+        // Set light uniforms
+        lightProjection = glm::perspective(45.0f, (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT, 1.0f, 2.0f);
+        lightView = glm::lookAt(scndlightPos, glm::vec3(0.0f), glm::vec3(1.0));
+        lightSpaceMatrix = lightProjection * lightView;
+        glUniform3fv(glGetUniformLocation(shaderShadow.Program, "lightPos"), 1, &scndlightPos[0]);
+        glUniformMatrix4fv(glGetUniformLocation(shaderShadow.Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
 
-         // - finally show all the light sources as bright cubes
-         shaderLight.Use();
-         glUniformMatrix4fv(glGetUniformLocation(shaderLight.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-         glUniformMatrix4fv(glGetUniformLocation(shaderLight.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        RenderGrass(grass_shader);
 
-         for (GLuint i = 0; i < lightPositions.size(); i++)
-         {
-             model = glm::mat4();
-             model = glm::translate(model, glm::vec3(lightPositions[i]));
-             model = glm::scale(model, glm::vec3(0.5f));
-             glUniformMatrix4fv(glGetUniformLocation(shaderLight.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-             glUniform3fv(glGetUniformLocation(shaderLight.Program, "lightColor"), 1, &lightColors[i][0]);
-             RenderCube();
-         }
-         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        /******************************** end ORIGINALE**************************/
 
-         // 2. Blur bright fragments w/ two-pass Gaussian Blur
-         GLboolean horizontal = true, first_iteration = true;
-         GLuint amount = 10;
-         shaderBlur.Use();
-         for (GLuint i = 0; i < amount; i++)
-         {
-             glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
-             glUniform1i(glGetUniformLocation(shaderBlur.Program, "horizontal"), horizontal);
-             glBindTexture(GL_TEXTURE_2D, first_iteration ? colorBuffers[1] : pingpongColorbuffers[!horizontal]);  // bind texture of other framebuffer (or scene if first iteration)
-             RenderQuad();
-             horizontal = !horizontal;
-             if (first_iteration)
-                 first_iteration = false;
-         }
-         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        // - finally show all the light sources as bright cubes
+        shaderLight.Use();
+        glUniformMatrix4fv(glGetUniformLocation(shaderLight.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(glGetUniformLocation(shaderLight.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
-         // 2. Now render floating point color buffer to 2D quad and tonemap HDR colors to default framebuffer's (clamped) color range
-         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        for (GLuint i = 0; i < lightPositions.size(); i++)
+        {
+            model = glm::mat4();
+            model = glm::translate(model, glm::vec3(lightPositions[i]));
+            model = glm::scale(model, glm::vec3(0.5f));
+            glUniformMatrix4fv(glGetUniformLocation(shaderLight.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            glUniform3fv(glGetUniformLocation(shaderLight.Program, "lightColor"), 1, &lightColors[i][0]);
+            RenderCube();
+        }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-         shaderBloomFinal.Use();
-         glActiveTexture(GL_TEXTURE0);
-         glBindTexture(GL_TEXTURE_2D, colorBuffers[0]);
-         glActiveTexture(GL_TEXTURE1);
-         glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[!horizontal]);
-         glUniform1i(glGetUniformLocation(shaderBloomFinal.Program, "bloom"), bloom);
-         glUniform1f(glGetUniformLocation(shaderBloomFinal.Program, "exposure"), exposure);
-         RenderQuad();
+        // 2. Blur bright fragments w/ two-pass Gaussian Blur
+        GLboolean horizontal = true, first_iteration = true;
+        GLuint amount = 10;
+        shaderBlur.Use();
+        for (GLuint i = 0; i < amount; i++)
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
+            glUniform1i(glGetUniformLocation(shaderBlur.Program, "horizontal"), horizontal);
+            glBindTexture(GL_TEXTURE_2D, first_iteration ? colorBuffers[1] : pingpongColorbuffers[!horizontal]);  // bind texture of other framebuffer (or scene if first iteration)
+            RenderQuad();
+            horizontal = !horizontal;
+            if (first_iteration)
+                first_iteration = false;
+        }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-         //___-------
+        // 2. Now render floating point color buffer to 2D quad and tonemap HDR colors to default framebuffer's (clamped) color range
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        shaderBloomFinal.Use();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, colorBuffers[0]);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[!horizontal]);
+        glUniform1i(glGetUniformLocation(shaderBloomFinal.Program, "bloom"), bloom);
+        glUniform1f(glGetUniformLocation(shaderBloomFinal.Program, "exposure"), exposure);
+        RenderQuad();
 
         // Swap the buffers
         glfwSwapBuffers(window);
@@ -559,73 +553,73 @@ void renderBloom(GLuint& depthMapFBO,Shader& shader,Shader& shaderLight,Shader& 
 {
 
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-     glm::mat4 projection = glm::perspective(camera.Zoom, (GLfloat)SCR_WIDTH / (GLfloat)SCR_HEIGHT, 0.1f, 100.0f);
-     glm::mat4 view = camera.GetViewMatrix();
-     glm::mat4 model;
-     shader.Use();
-     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-     glActiveTexture(GL_TEXTURE0);
-//        glBindTexture(GL_TEXTURE_2D, woodTexture);
-     // - set lighting uniforms
-     for (GLuint i = 0; i < lightPositions.size(); i++)
-     {
-         glUniform3fv(glGetUniformLocation(shader.Program, ("lights[" + std::to_string(i) + "].Position").c_str()), 1, &lightPositions[i][0]);
-         glUniform3fv(glGetUniformLocation(shader.Program, ("lights[" + std::to_string(i) + "].Color").c_str()), 1, &lightColors[i][0]);
-     }
-     glUniform3fv(glGetUniformLocation(shader.Program, "viewPos"), 1, &camera.Position[0]);
+    glm::mat4 projection = glm::perspective(camera.Zoom, (GLfloat)SCR_WIDTH / (GLfloat)SCR_HEIGHT, 0.1f, 100.0f);
+    glm::mat4 view = camera.GetViewMatrix();
+    glm::mat4 model;
+    shader.Use();
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+    glActiveTexture(GL_TEXTURE0);
+    //        glBindTexture(GL_TEXTURE_2D, woodTexture);
+    // - set lighting uniforms
+    for (GLuint i = 0; i < lightPositions.size(); i++)
+    {
+        glUniform3fv(glGetUniformLocation(shader.Program, ("lights[" + std::to_string(i) + "].Position").c_str()), 1, &lightPositions[i][0]);
+        glUniform3fv(glGetUniformLocation(shader.Program, ("lights[" + std::to_string(i) + "].Color").c_str()), 1, &lightColors[i][0]);
+    }
+    glUniform3fv(glGetUniformLocation(shader.Program, "viewPos"), 1, &camera.Position[0]);
 
-     RenderFloor1(shader);
+    RenderFloor1(shader);
 
 
 
-     // - finally show all the light sources as bright cubes
-     shaderLight.Use();
-     glUniformMatrix4fv(glGetUniformLocation(shaderLight.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-     glUniformMatrix4fv(glGetUniformLocation(shaderLight.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+    // - finally show all the light sources as bright cubes
+    shaderLight.Use();
+    glUniformMatrix4fv(glGetUniformLocation(shaderLight.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(shaderLight.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
-     for (GLuint i = 0; i < lightPositions.size(); i++)
-     {
-         model = glm::mat4();
-         model = glm::translate(model, glm::vec3(lightPositions[i]));
-         model = glm::scale(model, glm::vec3(0.5f));
-         glUniformMatrix4fv(glGetUniformLocation(shaderLight.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-         glUniform3fv(glGetUniformLocation(shaderLight.Program, "lightColor"), 1, &lightColors[i][0]);
-         RenderCube();
-     }
-     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    for (GLuint i = 0; i < lightPositions.size(); i++)
+    {
+        model = glm::mat4();
+        model = glm::translate(model, glm::vec3(lightPositions[i]));
+        model = glm::scale(model, glm::vec3(0.5f));
+        glUniformMatrix4fv(glGetUniformLocation(shaderLight.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        glUniform3fv(glGetUniformLocation(shaderLight.Program, "lightColor"), 1, &lightColors[i][0]);
+        RenderCube();
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-     // 2. Blur bright fragments w/ two-pass Gaussian Blur
-     GLboolean horizontal = true, first_iteration = true;
-     GLuint amount = 10;
-     shaderBlur.Use();
-     for (GLuint i = 0; i < amount; i++)
-     {
-         glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
-         glUniform1i(glGetUniformLocation(shaderBlur.Program, "horizontal"), horizontal);
-         glBindTexture(GL_TEXTURE_2D, first_iteration ? colorBuffers[1] : pingpongColorbuffers[!horizontal]);  // bind texture of other framebuffer (or scene if first iteration)
-         RenderQuad();
-         horizontal = !horizontal;
-         if (first_iteration)
-             first_iteration = false;
-     }
-     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // 2. Blur bright fragments w/ two-pass Gaussian Blur
+    GLboolean horizontal = true, first_iteration = true;
+    GLuint amount = 10;
+    shaderBlur.Use();
+    for (GLuint i = 0; i < amount; i++)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
+        glUniform1i(glGetUniformLocation(shaderBlur.Program, "horizontal"), horizontal);
+        glBindTexture(GL_TEXTURE_2D, first_iteration ? colorBuffers[1] : pingpongColorbuffers[!horizontal]);  // bind texture of other framebuffer (or scene if first iteration)
+        RenderQuad();
+        horizontal = !horizontal;
+        if (first_iteration)
+            first_iteration = false;
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-     // 2. Now render floating point color buffer to 2D quad and tonemap HDR colors to default framebuffer's (clamped) color range
-     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-     glClearColor(0.5,0.5,0.5,1);
-     shaderBloomFinal.Use();
-     glActiveTexture(GL_TEXTURE0);
-     glBindTexture(GL_TEXTURE_2D, colorBuffers[0]);
-     glActiveTexture(GL_TEXTURE1);
-     glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[!horizontal]);
-     glUniform1i(glGetUniformLocation(shaderBloomFinal.Program, "bloom"), bloom);
-     glUniform1f(glGetUniformLocation(shaderBloomFinal.Program, "exposure"), exposure);
-     RenderQuad();
+    // 2. Now render floating point color buffer to 2D quad and tonemap HDR colors to default framebuffer's (clamped) color range
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearColor(0.5,0.5,0.5,1);
+    shaderBloomFinal.Use();
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, colorBuffers[0]);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[!horizontal]);
+    glUniform1i(glGetUniformLocation(shaderBloomFinal.Program, "bloom"), bloom);
+    glUniform1f(glGetUniformLocation(shaderBloomFinal.Program, "exposure"), exposure);
+    RenderQuad();
 
-     //___-------
+    //___-------
 }
 
 void initFloor1(){
