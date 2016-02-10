@@ -18,7 +18,7 @@
 #include <SOIL.h>
 
 // Properties
-const GLuint SCR_WIDTH = 1024, SCR_HEIGHT = 768;
+const GLuint SCR_WIDTH = 1024*2, SCR_HEIGHT = 768*2;
 
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -53,7 +53,7 @@ int main()
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", nullptr, nullptr); // Windowed
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH/2, SCR_HEIGHT/2, "LearnOpenGL", nullptr, nullptr); // Windowed
     glfwMakeContextCurrent(window);
 
     // Set the required callback functions
@@ -188,44 +188,44 @@ int main()
             }
             glUniform3fv(glGetUniformLocation(shaderBloom.Program, "viewPos"), 1, &camera.Position[0]);
             // - create one large cube that acts as the floor
-            model = glm::mat4();
-            model = glm::translate(model, glm::vec3(0.0f, -1.0f, 0.0));
-            model = glm::scale(model, glm::vec3(25.0f, 1.0f, 25.0f));
-            glUniformMatrix4fv(glGetUniformLocation(shaderBloom.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-            RenderCube();
+//            model = glm::mat4();
+//            model = glm::translate(model, glm::vec3(0.0f, -1.0f, 0.0));
+//            model = glm::scale(model, glm::vec3(25.0f, 1.0f, 25.0f));
+//            glUniformMatrix4fv(glGetUniformLocation(shaderBloom.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+//            RenderCube();
             // - then create multiple cubes as the scenery
-            glBindTexture(GL_TEXTURE_2D, containerTexture);
-            model = glm::mat4();
-            model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0));
-            glUniformMatrix4fv(glGetUniformLocation(shaderBloom.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-            RenderCube();
-            model = glm::mat4();
-            model = glm::translate(model, glm::vec3(2.0f, 0.0f, 1.0));
-            glUniformMatrix4fv(glGetUniformLocation(shaderBloom.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-            RenderCube();
-            model = glm::mat4();
-            model = glm::translate(model, glm::vec3(-1.0f, -1.0f, 2.0));
-            model = glm::rotate(model, 60.0f, glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
-            model = glm::scale(model, glm::vec3(2.0));
-            glUniformMatrix4fv(glGetUniformLocation(shaderBloom.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-            RenderCube();
-            model = glm::mat4();
-            model = glm::translate(model, glm::vec3(0.0f, 2.7f, 4.0));
-            model = glm::rotate(model, 23.0f, glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
-            model = glm::scale(model, glm::vec3(2.5));
-            glUniformMatrix4fv(glGetUniformLocation(shaderBloom.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-            RenderCube();
-            model = glm::mat4();
-            model = glm::translate(model, glm::vec3(-2.0f, 1.0f, -3.0));
-            model = glm::rotate(model, 124.0f, glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
-            model = glm::scale(model, glm::vec3(2.0));
-            glUniformMatrix4fv(glGetUniformLocation(shaderBloom.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-            RenderCube();
-            RenderCube();
-            model = glm::mat4();
-            model = glm::translate(model, glm::vec3(-3.0f, 0.0f, 0.0));
-            glUniformMatrix4fv(glGetUniformLocation(shaderBloom.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-            RenderCube();
+//            glBindTexture(GL_TEXTURE_2D, containerTexture);
+//            model = glm::mat4();
+//            model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0));
+//            glUniformMatrix4fv(glGetUniformLocation(shaderBloom.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+//            RenderCube();
+//            model = glm::mat4();
+//            model = glm::translate(model, glm::vec3(2.0f, 0.0f, 1.0));
+//            glUniformMatrix4fv(glGetUniformLocation(shaderBloom.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+//            RenderCube();
+//            model = glm::mat4();
+//            model = glm::translate(model, glm::vec3(-1.0f, -1.0f, 2.0));
+//            model = glm::rotate(model, 60.0f, glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
+//            model = glm::scale(model, glm::vec3(2.0));
+//            glUniformMatrix4fv(glGetUniformLocation(shaderBloom.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+//            RenderCube();
+//            model = glm::mat4();
+//            model = glm::translate(model, glm::vec3(0.0f, 2.7f, 4.0));
+//            model = glm::rotate(model, 23.0f, glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
+//            model = glm::scale(model, glm::vec3(2.5));
+//            glUniformMatrix4fv(glGetUniformLocation(shaderBloom.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+//            RenderCube();
+//            model = glm::mat4();
+//            model = glm::translate(model, glm::vec3(-2.0f, 1.0f, -3.0));
+//            model = glm::rotate(model, 124.0f, glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
+//            model = glm::scale(model, glm::vec3(2.0));
+//            glUniformMatrix4fv(glGetUniformLocation(shaderBloom.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+//            RenderCube();
+//            RenderCube();
+//            model = glm::mat4();
+//            model = glm::translate(model, glm::vec3(-3.0f, 0.0f, 0.0));
+//            glUniformMatrix4fv(glGetUniformLocation(shaderBloom.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+//            RenderCube();
             // - finally show all the light sources as bright cubes
             shaderLight.Use();
             glUniformMatrix4fv(glGetUniformLocation(shaderLight.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));

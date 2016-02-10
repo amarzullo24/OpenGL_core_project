@@ -170,6 +170,11 @@ foreach(CHAPTER ${CHAPTERS})
             "resources/objects/nanosuit/*.png"
             "shaders/*.vs"
             "shaders/*.frag"
+            "resources/textures/*.jpg"
+            "resources/textures/*.png"
+
+
+
         )
 
         add_executable(${DEMO} ${SOURCE}
