@@ -92,7 +92,7 @@ GLboolean bloom = true; // Change with 'Space'
 GLfloat exposure = 1.0f; // Change with Q and E
 
 glm::vec3 teleport_room_position(7.81814,  0.520741 , -0.166235);
-glm::vec3 positions_to_teleport[]={glm::vec3(-0.173773  ,-0.515819 , -1.0192),
+glm::vec3 positions_to_teleport[]={glm::vec3(-0.173773  ,0.515819 , -1.0192),
                                    glm::vec3(1.77708 , 4.18544 , 2.83903),
                                    glm::vec3(0.675843 , 4.02432  ,20.4425),
                                    glm::vec3(-0.17888 , 4.275,  -19.0614) };
@@ -253,7 +253,7 @@ int main()
     lightPositions.push_back(glm::vec3(14.0f, 0.5f, -3.0f));
     lightPositions.push_back(glm::vec3(14.0f, 0.5f, 1.0f));
     lightPositions.push_back(glm::vec3(10.0f, 0.5f, -1.0f));
-    lightPositions.push_back(glm::vec3(-0.173773  ,-0.515819 , -2.0192));
+    lightPositions.push_back(glm::vec3(-0.173773  ,0.5, -2.0192));
     lightPositions.push_back(glm::vec3(1.27708 , 4.18544 , 2.83903));
     lightPositions.push_back(glm::vec3(0.675843 , 4.02432  ,23.4425));
     lightPositions.push_back(glm::vec3(-0.17888 , 4.275,  -20.0614));
@@ -366,9 +366,6 @@ int main()
         glUniform3fv(glGetUniformLocation(shader.Program, "viewPos"), 1, &camera.Position[0]);
 
         /********************************ORIGINALE**************************/
-        shaderShadow.Use();
-        RenderModels(model_shader);
-
         // Change light position over time
         lightPos.z = cos(glfwGetTime()) * 2.0f;
 
@@ -435,6 +432,11 @@ int main()
         RenderCube();
         glUniform1i(glGetUniformLocation(shaderShadow.Program, "reverse_normals"), 0); // And of course disable it
         // ******************* end 2nd Room cube ************ //
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D,woodTexture);
+        RenderScene(shaderShadow);
+        RenderFloor1(floor1_shader);
+
 
         // ******************* Sky cube************ //
 
@@ -452,11 +454,6 @@ int main()
         RenderCube();
         // ******************* end Sky cube************ //
 
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D,woodTexture);
-        RenderScene(shaderShadow);
-        RenderFloor1(floor1_shader);
 
         // Set light uniforms
         lightProjection = glm::perspective(45.0f, (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT, 1.0f, 2.0f);
