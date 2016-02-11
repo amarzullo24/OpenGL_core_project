@@ -49,12 +49,59 @@ bool checkTeleports(std::vector<glm::vec3> lightPositions);
 
 
 bool detectModelCollision();
+bool detectCubeCollision();
 
 
-bool bulletDetectCollision(Model* model,glm::mat4 mat4_model_matrix);
+bool bulletModelDetectCollision(Model* model,glm::mat4 mat4_model_matrix);
+bool bulletCubeDetectCollision(glm::mat4 mat4_cube_matrix);
 
 
 
+
+GLfloat cube_vertices[] = {
+    // Back face
+    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, // Bottom-left
+    0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f, // top-right
+    0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f, // bottom-right
+    0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f,  // top-right
+    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,  // bottom-left
+    -0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f,// top-left
+    // Front face
+    -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // bottom-left
+    0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,  // bottom-right
+    0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,  // top-right
+    0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // top-right
+    -0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,  // top-left
+    -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,  // bottom-left
+    // Left face
+    -0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // top-right
+    -0.5f, 0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f, // top-left
+    -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,  // bottom-left
+    -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // bottom-left
+    -0.5f, -0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f,  // bottom-right
+    -0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // top-right
+    // Right face
+    0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // top-left
+    0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // bottom-right
+    0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, // top-right
+    0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,  // bottom-right
+    0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,  // top-left
+    0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // bottom-left
+    // Bottom face
+    -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, // top-right
+    0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 1.0f, // top-left
+    0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f,// bottom-left
+    0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, // bottom-left
+    -0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, // bottom-right
+    -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, // top-right
+    // Top face
+    -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,// top-left
+    0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // bottom-right
+    0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, // top-right
+    0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // bottom-right
+    -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,// top-left
+    -0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f // bottom-left
+};
 // Delta
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
@@ -92,6 +139,8 @@ Model* tree;
 Model* well;
 Model* wheel;
 
+Model* logicCube;
+
 vector<glm::vec3> fences;
 
 
@@ -105,9 +154,7 @@ glm::vec3 positions_to_teleport[]={glm::vec3(-0.173773  ,0.515819 , -1.0192),
                                    glm::vec3(0.675843 , 4.02432  ,20.4425),
                                    glm::vec3(-0.17888 , 4.275,  -19.0614) };
 
-//Camera camera(teleport_room_position);
-//Camera camera(positions_to_teleport[3]);
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(teleport_room_position);
 
 
 bool enableCollision=false;
@@ -236,6 +283,7 @@ int main()
     tree = new Model("resources/objects/grass/tree.obj");
     well = new Model("resources/objects/elevator/well.obj");
     wheel = new Model("resources/objects/elevator/wheel.obj");
+    logicCube = new Model("resources/objects/cube/cube.obj");
 
     /*--------------------------------------------------*/
 
@@ -363,7 +411,7 @@ int main()
 
         glViewport(0, 0, SCR_WIDTH*2, SCR_HEIGHT*2);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        if(enableCollision && detectModelCollision())
+        if(enableCollision && (detectCubeCollision()|| detectModelCollision() ))
         {
             camera=precedentCamera;
             continue;
@@ -558,7 +606,7 @@ int main()
     return 0;
 }
 
-bool bulletDetectCollision(Model* model,glm::mat4 mat4_model_matrix)
+bool bulletModelDetectCollision(Model* model,glm::mat4 mat4_model_matrix)
 {
 
     btCollisionConfiguration* bt_collision_configuration= new btDefaultCollisionConfiguration();;
@@ -615,9 +663,9 @@ bool bulletDetectCollision(Model* model,glm::mat4 mat4_model_matrix)
 //    model_coll_obj->getWorldTransform().setFromOpenGLMatrix(btScalar_matrix);
 
     //Create a sphere with a radius of 1
-    btSphereShape * sphere_shape = new btSphereShape(0.1);
+    btBoxShape * box_shape = (new btBoxShape(btVector3((btScalar)0.5,(btScalar)0.5,(btScalar)0.5)));
     //Set the shape of each collision object
-    camera_sphere->setCollisionShape(sphere_shape);
+    camera_sphere->setCollisionShape(box_shape);
     //Add the collision objects to our collision world
     bt_collision_world->addCollisionObject(camera_sphere);
     bt_collision_world->addCollisionObject(model_coll_obj);
@@ -652,7 +700,7 @@ bool bulletDetectCollision(Model* model,glm::mat4 mat4_model_matrix)
     delete trimesh;
     delete shape;
 
-    delete sphere_shape;
+    delete box_shape;
 
     delete bt_collision_world;
     delete bt_collision_configuration;
@@ -675,7 +723,7 @@ bool detectModelCollision(){
     glm::mat4 model;
     model = glm::translate(model, glm::vec3(2.0f, FLOOR1_Y+1.1, 2.0f)); // Translate it down a bit so it's at the center of the scene
     //model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// It's a bit too big for our scene, so scale it down
-    bool toReturn=bulletDetectCollision(logicFloor1,projection*view*model);
+    bool toReturn=bulletModelDetectCollision(logicFloor1,projection*view*model);
 
 
     /*--------------------------DRAWING OBJ------------------*/
@@ -688,6 +736,218 @@ bool detectModelCollision(){
 
     /*--------------------------DRAWING OBJ------------------*/
     return toReturn;
+}
+
+bool detectCubeCollision(){
+
+
+    glm::mat4 view = camera.GetViewMatrix();
+    glm::mat4 projection = glm::perspective(camera.Zoom, (float)SCR_WIDTH/(float)SCR_HEIGHT, 0.1f, 100.0f);
+
+    glm::mat4 model;
+    model = glm::scale(model, glm::vec3(10.0/2,3.9/2,10/2));
+    bool toReturn=bulletModelDetectCollision(logicCube,projection*view*model);
+
+    model = glm::mat4();
+    model = glm::translate(model, glm::vec3(10.3f, 1.5, 0.f));
+    model = glm::scale(model, glm::vec3(10.0/2,3.9/2,10/2));
+    bool toReturn1=bulletModelDetectCollision(logicCube,projection*view*model);
+
+    return toReturn || toReturn1;
+}
+
+
+bool bulletCubeDetectCollision(glm::mat4 mat4_cube_matrix)
+{
+
+   /* btCollisionConfiguration* bt_collision_configuration= new btDefaultCollisionConfiguration();;
+    btCollisionDispatcher* bt_dispatcher=new btCollisionDispatcher(bt_collision_configuration);
+    btBroadphaseInterface* bt_broadphase;
+    btCollisionWorld* bt_collision_world;
+
+    double scene_size = 500;
+    unsigned int max_objects = 16000;
+
+
+
+
+    btScalar sscene_size = (btScalar) scene_size;
+    btVector3 worldAabbMin(-sscene_size, -sscene_size, -sscene_size);
+    btVector3 worldAabbMax(sscene_size, sscene_size, sscene_size);
+    //This is one type of broadphase, bullet has others that might be faster depending on the application
+    bt_broadphase = new bt32BitAxisSweep3(worldAabbMin, worldAabbMax, max_objects, 0, true);  // true for disabling raycast accelerator
+
+    bt_collision_world = new btCollisionWorld(bt_dispatcher, bt_broadphase, bt_collision_configuration);
+    //Create two collision objects
+    btCollisionObject* camera_sphere = new btCollisionObject();
+    btCollisionObject* obstacle_box = new btCollisionObject();
+    //Move each to a specific location
+    camera_sphere->getWorldTransform().setOrigin(btVector3((btScalar) 0, (btScalar) 0, (btScalar) 0));
+
+    btScalar btScalar_matrix[16];
+    for(int i=0;i<4;i++)
+    {
+        glm::vec4 result = mat4_cube_matrix[i];
+        for(int j=0;j<4;j++)
+            btScalar_matrix[i*4+j]=result[j];
+    }
+    obstacle_box->getWorldTransform().setFromOpenGLMatrix(btScalar_matrix);
+
+    //Create a sphere with a radius of 1
+    btSphereShape * sphere_shape = new btSphereShape(0.1);
+    //Set the shape of each collision object
+    camera_sphere->setCollisionShape(sphere_shape);
+    obstacle_box->setCollisionShape(new btBoxShape(btVector3((btScalar)0.5,(btScalar)0.5,(btScalar)0.5)));
+    //Add the collision objects to our collision world
+    bt_collision_world->addCollisionObject(camera_sphere);
+    bt_collision_world->addCollisionObject(obstacle_box);
+
+    //Perform collision detection
+    bt_collision_world->performDiscreteCollisionDetection();
+
+    int numManifolds = bt_collision_world->getDispatcher()->getNumManifolds();
+    //For each contact manifold
+    for (int i = 0; i < numManifolds; i++) {
+        btPersistentManifold* contactManifold = bt_collision_world->getDispatcher()->getManifoldByIndexInternal(i);
+        const btCollisionObject* obA = static_cast<const btCollisionObject*>(contactManifold->getBody0());
+        const btCollisionObject* obB = static_cast<const btCollisionObject*>(contactManifold->getBody1());
+        contactManifold->refreshContactPoints(obA->getWorldTransform(), obB->getWorldTransform());
+        int numContacts = contactManifold->getNumContacts();
+        //For each contact point in that manifold
+        for (int j = 0; j < numContacts; j++) {
+            //Get the contact information
+            btManifoldPoint& pt = contactManifold->getContactPoint(j);
+            btVector3 ptA = pt.getPositionWorldOnA();
+            btVector3 ptB = pt.getPositionWorldOnB();
+            double ptdist = pt.getDistance();
+            std::cout<<ptA<<"   "<<ptB<<"   "<<ptdist<<std::endl;
+        }
+    }
+
+    bt_collision_world->removeCollisionObject(camera_sphere);
+    delete camera_sphere;
+
+    bt_collision_world->removeCollisionObject(obstacle_box);
+    delete obstacle_box;
+
+
+    delete sphere_shape;
+
+    delete bt_collision_world;
+    delete bt_collision_configuration;
+    delete bt_dispatcher;
+    delete bt_broadphase;
+
+
+    std::cout<<numManifolds<<std::endl;
+    return numManifolds>0;
+
+    */
+
+
+    btCollisionConfiguration* bt_collision_configuration= new btDefaultCollisionConfiguration();;
+    btCollisionDispatcher* bt_dispatcher=new btCollisionDispatcher(bt_collision_configuration);
+    btBroadphaseInterface* bt_broadphase;
+    btCollisionWorld* bt_collision_world;
+
+    double scene_size = 500;
+    unsigned int max_objects = 16000;
+
+
+    btScalar sscene_size = (btScalar) scene_size;
+    btVector3 worldAabbMin(-sscene_size, -sscene_size, -sscene_size);
+    btVector3 worldAabbMax(sscene_size, sscene_size, sscene_size);
+    //This is one type of broadphase, bullet has others that might be faster depending on the application
+    bt_broadphase = new bt32BitAxisSweep3(worldAabbMin, worldAabbMax, max_objects, 0, true);  // true for disabling raycast accelerator
+
+    bt_collision_world = new btCollisionWorld(bt_dispatcher, bt_broadphase, bt_collision_configuration);
+    //Create two collision objects
+    btCollisionObject* camera_sphere = new btCollisionObject();
+    camera_sphere->getWorldTransform().setOrigin(btVector3((btScalar) 0, (btScalar) 0, (btScalar) 0));
+
+    btTriangleMesh* trimesh = new btTriangleMesh();
+        for(int j=0;j<288;j+=9)
+        {
+            vector<btVector3> triangle_vertices;
+            glm::vec4 translated_vertex;
+            for(int z=0;z<9;z+=3)
+            {
+                  glm::vec3 position;
+                  for(int c=0;c<3;c++)
+                  {
+                      position[c]=cube_vertices[j+z+c];
+                  }
+                  translated_vertex=mat4_cube_matrix*glm::vec4(position,1);
+                  triangle_vertices.push_back(btVector3(translated_vertex[0],translated_vertex[1],translated_vertex[2]));
+//                triangle_vertices.push_back(btVector3(vertex[j+z].Position[0],vertex[j+z].Position[1],vertex[j+z].Position[2]));
+            }
+            trimesh->addTriangle(triangle_vertices[0],triangle_vertices[1],triangle_vertices[2]);
+        }
+    btScalar btScalar_matrix[16];
+    for(int i=0;i<4;i++)
+    {
+        glm::vec4 result = mat4_cube_matrix[i];
+        for(int j=0;j<4;j++)
+            btScalar_matrix[i*4+j]=result[j];
+    }
+    btCollisionObject* model_coll_obj = new btCollisionObject();
+
+    btCollisionShape* shape = 0;
+    bool useQuantization = true;
+    shape  = new btBvhTriangleMeshShape(trimesh,useQuantization);
+    model_coll_obj->setCollisionShape(shape);
+//    model_coll_obj->getWorldTransform().setFromOpenGLMatrix(btScalar_matrix);
+
+    //Create a sphere with a radius of 1
+    btSphereShape * sphere_shape = new btSphereShape(0.1);
+    //Set the shape of each collision object
+    camera_sphere->setCollisionShape(sphere_shape);
+    //Add the collision objects to our collision world
+    bt_collision_world->addCollisionObject(camera_sphere);
+    bt_collision_world->addCollisionObject(model_coll_obj);
+
+    //Perform collision detection
+    bt_collision_world->performDiscreteCollisionDetection();
+    bool inside=false;
+    int numManifolds = bt_collision_world->getDispatcher()->getNumManifolds();
+    //For each contact manifold
+    for (int i = 0; i < numManifolds; i++) {
+        btPersistentManifold* contactManifold = bt_collision_world->getDispatcher()->getManifoldByIndexInternal(i);
+        const btCollisionObject* obA = static_cast<const btCollisionObject*>(contactManifold->getBody0());
+        const btCollisionObject* obB = static_cast<const btCollisionObject*>(contactManifold->getBody1());
+        contactManifold->refreshContactPoints(obA->getWorldTransform(), obB->getWorldTransform());
+        int numContacts = contactManifold->getNumContacts();
+        //For each contact point in that manifold
+        for (int j = 0; j < numContacts; j++) {
+            //Get the contact information
+            btManifoldPoint& pt = contactManifold->getContactPoint(j);
+            btVector3 ptA = pt.getPositionWorldOnA();
+            btVector3 ptB = pt.getPositionWorldOnB();
+            double ptdist = pt.getDistance();
+            cout<<ptA<<"   "<<ptB<<"   "<<ptdist<<endl;
+            if(ptdist>=0)
+                inside=true;
+        }
+    }
+
+    bt_collision_world->removeCollisionObject(camera_sphere);
+    delete camera_sphere;
+
+    bt_collision_world->removeCollisionObject(model_coll_obj);
+    delete model_coll_obj;
+    delete trimesh;
+    delete shape;
+
+    delete sphere_shape;
+
+    delete bt_collision_world;
+    delete bt_collision_configuration;
+    delete bt_dispatcher;
+    delete bt_broadphase;
+
+
+    return inside;
+
 }
 
 bool checkTeleports(std::vector<glm::vec3> lightPositions)
@@ -1050,55 +1310,11 @@ void RenderCube()
     // Initialize (if necessary)
     if (cubeVAO == 0)
     {
-        GLfloat vertices[] = {
-            // Back face
-            -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, // Bottom-left
-            0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f, // top-right
-            0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f, // bottom-right
-            0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f,  // top-right
-            -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,  // bottom-left
-            -0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f,// top-left
-            // Front face
-            -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // bottom-left
-            0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,  // bottom-right
-            0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,  // top-right
-            0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // top-right
-            -0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,  // top-left
-            -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,  // bottom-left
-            // Left face
-            -0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // top-right
-            -0.5f, 0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f, // top-left
-            -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,  // bottom-left
-            -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // bottom-left
-            -0.5f, -0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f,  // bottom-right
-            -0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // top-right
-            // Right face
-            0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // top-left
-            0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // bottom-right
-            0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, // top-right
-            0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,  // bottom-right
-            0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,  // top-left
-            0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // bottom-left
-            // Bottom face
-            -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, // top-right
-            0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 1.0f, // top-left
-            0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f,// bottom-left
-            0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, // bottom-left
-            -0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, // bottom-right
-            -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, // top-right
-            // Top face
-            -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,// top-left
-            0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // bottom-right
-            0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, // top-right
-            0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // bottom-right
-            -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,// top-left
-            -0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f // bottom-left
-        };
         glGenVertexArrays(1, &cubeVAO);
         glGenBuffers(1, &cubeVBO);
         // Fill buffer
         glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), cube_vertices, GL_STATIC_DRAW);
         // Link vertex attributes
         glBindVertexArray(cubeVAO);
         glEnableVertexAttribArray(0);
@@ -1166,9 +1382,15 @@ void Do_Movement()
         std::cout<<camera.Position[0]<<"  "<<camera.Position[1]<<"  "<<camera.Position[2]<<"  "<<endl;
 
     if (keys[GLFW_KEY_C])
+    {
         enableCollision=true;
+        std::cout<<"collision enable "<<endl;
+    }
     if (keys[GLFW_KEY_V])
+    {
         enableCollision=false;
+        std::cout<<"collision disable "<<endl;
+    }
 }
 
 GLfloat lastX = 400, lastY = 300;
