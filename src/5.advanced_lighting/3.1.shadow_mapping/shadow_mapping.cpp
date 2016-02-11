@@ -48,6 +48,13 @@ bool checkTeleports(std::vector<glm::vec3> lightPositions);
 
 
 
+bool detectModelCollision();
+
+
+bool bulletDetectCollision(Model* model,glm::mat4 mat4_model_matrix);
+
+
+
 // Delta
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
@@ -97,7 +104,9 @@ glm::vec3 positions_to_teleport[]={glm::vec3(-0.173773  ,0.515819 , -1.0192),
                                    glm::vec3(0.675843 , 4.02432  ,20.4425),
                                    glm::vec3(-0.17888 , 4.275,  -19.0614) };
 
-Camera camera(teleport_room_position);
+//Camera camera(teleport_room_position);
+//Camera camera(positions_to_teleport[3]);
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 int main()
 {
     // Init GLFW
@@ -343,8 +352,14 @@ int main()
         // Check and call events
         glfwPollEvents();
 
+        Camera precedentCamera=camera.cameraPhoto();
         if(!checkTeleports(lightPositions))
             Do_Movement();
+
+//        if(detectModelCollision())
+//            camera = precedentCamera;
+
+
 
 
         glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
@@ -372,6 +387,7 @@ int main()
         // 2. Render scene as normal
         glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
         shaderShadow.Use();
+
         RenderModels(model_shader);
 
         // 1. Render depth of scene to texture (from light's perspective)
@@ -532,6 +548,137 @@ int main()
 
     glfwTerminate();
     return 0;
+}
+
+bool bulletDetectCollision(Model* model,glm::mat4 mat4_model_matrix)
+{
+
+    btCollisionConfiguration* bt_collision_configuration= new btDefaultCollisionConfiguration();;
+    btCollisionDispatcher* bt_dispatcher=new btCollisionDispatcher(bt_collision_configuration);
+    btBroadphaseInterface* bt_broadphase;
+    btCollisionWorld* bt_collision_world;
+
+    double scene_size = 500;
+    unsigned int max_objects = 16000;
+
+
+    btScalar sscene_size = (btScalar) scene_size;
+    btVector3 worldAabbMin(-sscene_size, -sscene_size, -sscene_size);
+    btVector3 worldAabbMax(sscene_size, sscene_size, sscene_size);
+    //This is one type of broadphase, bullet has others that might be faster depending on the application
+    bt_broadphase = new bt32BitAxisSweep3(worldAabbMin, worldAabbMax, max_objects, 0, true);  // true for disabling raycast accelerator
+
+    bt_collision_world = new btCollisionWorld(bt_dispatcher, bt_broadphase, bt_collision_configuration);
+    //Create two collision objects
+    btCollisionObject* camera_sphere = new btCollisionObject();
+    camera_sphere->getWorldTransform().setOrigin(btVector3((btScalar) 0, (btScalar) 0, (btScalar) 0));
+
+    btTriangleMesh* trimesh = new btTriangleMesh();
+    for (int i=0;i<model->meshes.size();i++)
+    {
+        vector<Vertex> vertex = model->meshes[i].vertices;
+        for(int j=0;j<vertex.size();j+=3)
+        {
+            vector<btVector3> triangle_vertices;
+            glm::vec4 translated_vertex;
+            for(int z=0;z<3;z++)
+            {
+                translated_vertex=mat4_model_matrix*glm::vec4(vertex[j+z].Position,1);
+                triangle_vertices.push_back(btVector3(translated_vertex[0],translated_vertex[1],translated_vertex[2]));
+                //                triangle_vertices.push_back(btVector3(vertex[j+z].Position[0],vertex[j+z].Position[1],vertex[j+z].Position[2]));
+
+            }
+            trimesh->addTriangle(triangle_vertices[0],triangle_vertices[1],triangle_vertices[2]);
+        }
+    }
+    btScalar btScalar_matrix[16];
+    for(int i=0;i<4;i++)
+    {
+        glm::vec4 result = mat4_model_matrix[i];
+        for(int j=0;j<4;j++)
+            btScalar_matrix[i*4+j]=result[j];
+    }
+    btCollisionObject* model_coll_obj = new btCollisionObject();
+
+    btCollisionShape* shape = 0;
+    bool useQuantization = true;
+    shape  = new btBvhTriangleMeshShape(trimesh,useQuantization);
+    model_coll_obj->setCollisionShape(shape);
+    //    model_coll_obj->getWorldTransform().setFromOpenGLMatrix(btScalar_matrix);
+
+    //Create a sphere with a radius of 1
+    btSphereShape * sphere_shape = new btSphereShape(0.1);
+    //Set the shape of each collision object
+    camera_sphere->setCollisionShape(sphere_shape);
+    //Add the collision objects to our collision world
+    bt_collision_world->addCollisionObject(camera_sphere);
+    bt_collision_world->addCollisionObject(model_coll_obj);
+
+    //Perform collision detection
+    bt_collision_world->performDiscreteCollisionDetection();
+
+    int numManifolds = bt_collision_world->getDispatcher()->getNumManifolds();
+    //For each contact manifold
+    for (int i = 0; i < numManifolds; i++) {
+        btPersistentManifold* contactManifold = bt_collision_world->getDispatcher()->getManifoldByIndexInternal(i);
+        const btCollisionObject* obA = static_cast<const btCollisionObject*>(contactManifold->getBody0());
+        const btCollisionObject* obB = static_cast<const btCollisionObject*>(contactManifold->getBody1());
+        contactManifold->refreshContactPoints(obA->getWorldTransform(), obB->getWorldTransform());
+        int numContacts = contactManifold->getNumContacts();
+        //For each contact point in that manifold
+        for (int j = 0; j < numContacts; j++) {
+            //Get the contact information
+            btManifoldPoint& pt = contactManifold->getContactPoint(j);
+            btVector3 ptA = pt.getPositionWorldOnA();
+            btVector3 ptB = pt.getPositionWorldOnB();
+            double ptdist = pt.getDistance();
+            cout<<ptA<<"   "<<ptB<<"   "<<ptdist<<endl;
+        }
+    }
+
+    bt_collision_world->removeCollisionObject(camera_sphere);
+    delete camera_sphere;
+
+    bt_collision_world->removeCollisionObject(model_coll_obj);
+    delete model_coll_obj;
+    delete trimesh;
+    delete shape;
+
+    delete sphere_shape;
+
+    delete bt_collision_world;
+    delete bt_collision_configuration;
+    delete bt_dispatcher;
+    delete bt_broadphase;
+
+
+    return numManifolds>0;
+
+}
+
+bool detectModelCollision(){
+
+
+    glm::mat4 view = camera.GetViewMatrix();
+    glm::mat4 projection = glm::perspective(camera.Zoom, (float)SCR_WIDTH/(float)SCR_HEIGHT, 0.1f, 100.0f);
+
+    // Draw the loaded model
+    glm::mat4 model;
+    model = glm::translate(model, glm::vec3(2.0f, FLOOR1_Y+1.1, 2.0f)); // Translate it down a bit so it's at the center of the scene
+    //model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// It's a bit too big for our scene, so scale it down
+    bool toReturn=bulletDetectCollision(floor1,projection*view*model);
+
+
+    /*--------------------------DRAWING OBJ------------------*/
+
+    // Draw the loaded model
+    model = glm::mat4();
+    model = glm::translate(model, glm::vec3(2.0f, -0.50f, 2.0f)); // Translate it down a bit so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// It's a bit too big for our scene, so scale it down
+    //    bulletDetectCollision(monster,projection * view * model);
+
+    /*--------------------------DRAWING OBJ------------------*/
+    return toReturn;
 }
 
 bool checkTeleports(std::vector<glm::vec3> lightPositions)

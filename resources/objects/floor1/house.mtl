@@ -1,8 +1,8 @@
-# Blender MTL File: 'None'
+# Blender MTL File: 'House4Upload.blend'
 # Material Count: 16
 
 newmtl Brick.002
-Ns 92.156863
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.005263 0.005263 0.005263
@@ -13,7 +13,7 @@ illum 2
 map_Kd textures/GreyBricks.jpg
 
 newmtl DoorType1_2.002
-Ns 92.156863
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.000000 0.000000 0.000000
@@ -24,7 +24,7 @@ illum 2
 map_Kd textures/DoorType1_2.jpg
 
 newmtl GreyBrick2.003
-Ns 92.156863
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.000000 0.000000 0.000000
@@ -35,7 +35,7 @@ illum 2
 map_Kd textures/GreyBricks2.jpg
 
 newmtl GreyStone2.003
-Ns 92.156863
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.000000 0.000000 0.000000
@@ -46,7 +46,7 @@ illum 2
 map_Kd textures/GreyStone2.jpg
 
 newmtl LogEdgeWeathered.002
-Ns 92.156863
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.000000 0.000000 0.000000
@@ -57,7 +57,7 @@ illum 2
 map_Kd textures/TreeLogEdgeWeathered.jpg
 
 newmtl LogEdgeWeathered_Wood.jpg.001
-Ns 92.156863
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.000000 0.000000 0.000000
@@ -68,7 +68,7 @@ illum 2
 map_Kd textures/Wood.jpg
 
 newmtl LogEdgeWeathered_Wood.jpg.003
-Ns 92.156863
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.000000 0.000000 0.000000
@@ -79,7 +79,7 @@ illum 2
 map_Kd textures/Wood.jpg
 
 newmtl Plaster.002
-Ns 92.156863
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.000000 0.000000 0.000000
@@ -90,7 +90,7 @@ illum 2
 map_Kd textures/PlasterLarge.jpg
 
 newmtl RoofTiles.002
-Ns 92.156863
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.000000 0.000000 0.000000
@@ -101,7 +101,7 @@ illum 2
 map_Kd textures/RoofTiles.jpg
 
 newmtl RustedMetal.002
-Ns 92.156863
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.047368 0.047368 0.047368
@@ -112,7 +112,7 @@ illum 2
 map_Kd textures/Rusted Metal.jpg
 
 newmtl Stone.002
-Ns 92.156863
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.000000 0.000000 0.000000
@@ -123,7 +123,7 @@ illum 2
 map_Kd textures/Stone.jpg
 
 newmtl WindowBlue1.002
-Ns 92.156863
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.025000 0.025000 0.025000
@@ -134,7 +134,7 @@ illum 2
 map_Kd textures/WindowBlue1.jpg
 
 newmtl WindowBlue2.002
-Ns 92.156863
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.025000 0.025000 0.025000
@@ -145,7 +145,7 @@ illum 2
 map_Kd textures/WindowsBlue2.jpg
 
 newmtl Wood.001_Wood.jpg.001
-Ns 92.156863
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.000000 0.000000 0.000000
@@ -156,7 +156,7 @@ illum 2
 map_Kd textures/Wood.jpg
 
 newmtl Wood.004
-Ns 92.156863
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.000000 0.000000 0.000000
@@ -167,7 +167,7 @@ illum 2
 map_Kd textures/Wood.jpg
 
 newmtl Wood.005
-Ns 92.156863
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.000000 0.000000 0.000000
