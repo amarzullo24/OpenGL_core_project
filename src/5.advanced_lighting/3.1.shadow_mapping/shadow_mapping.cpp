@@ -107,6 +107,9 @@ glm::vec3 positions_to_teleport[]={glm::vec3(-0.173773  ,0.515819 , -1.0192),
 //Camera camera(teleport_room_position);
 //Camera camera(positions_to_teleport[3]);
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+
+
+bool enableCollision=false;
 int main()
 {
     // Init GLFW
@@ -356,10 +359,13 @@ int main()
         if(!checkTeleports(lightPositions))
             Do_Movement();
 
-//        if(detectModelCollision())
-//            camera = precedentCamera;
-
-
+        glViewport(0, 0, SCR_WIDTH*2, SCR_HEIGHT*2);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        if(enableCollision && detectModelCollision())
+        {
+            camera=precedentCamera;
+            continue;
+        }
 
 
         glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
@@ -583,9 +589,9 @@ bool bulletDetectCollision(Model* model,glm::mat4 mat4_model_matrix)
             glm::vec4 translated_vertex;
             for(int z=0;z<3;z++)
             {
-                translated_vertex=mat4_model_matrix*glm::vec4(vertex[j+z].Position,1);
-                triangle_vertices.push_back(btVector3(translated_vertex[0],translated_vertex[1],translated_vertex[2]));
-                //                triangle_vertices.push_back(btVector3(vertex[j+z].Position[0],vertex[j+z].Position[1],vertex[j+z].Position[2]));
+                  translated_vertex=mat4_model_matrix*glm::vec4(vertex[j+z].Position,1);
+                  triangle_vertices.push_back(btVector3(translated_vertex[0],translated_vertex[1],translated_vertex[2]));
+//                triangle_vertices.push_back(btVector3(vertex[j+z].Position[0],vertex[j+z].Position[1],vertex[j+z].Position[2]));
 
             }
             trimesh->addTriangle(triangle_vertices[0],triangle_vertices[1],triangle_vertices[2]);
@@ -604,7 +610,7 @@ bool bulletDetectCollision(Model* model,glm::mat4 mat4_model_matrix)
     bool useQuantization = true;
     shape  = new btBvhTriangleMeshShape(trimesh,useQuantization);
     model_coll_obj->setCollisionShape(shape);
-    //    model_coll_obj->getWorldTransform().setFromOpenGLMatrix(btScalar_matrix);
+//    model_coll_obj->getWorldTransform().setFromOpenGLMatrix(btScalar_matrix);
 
     //Create a sphere with a radius of 1
     btSphereShape * sphere_shape = new btSphereShape(0.1);
@@ -656,6 +662,7 @@ bool bulletDetectCollision(Model* model,glm::mat4 mat4_model_matrix)
 
 }
 
+
 bool detectModelCollision(){
 
 
@@ -675,7 +682,7 @@ bool detectModelCollision(){
     model = glm::mat4();
     model = glm::translate(model, glm::vec3(2.0f, -0.50f, 2.0f)); // Translate it down a bit so it's at the center of the scene
     model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// It's a bit too big for our scene, so scale it down
-    //    bulletDetectCollision(monster,projection * view * model);
+//    bulletDetectCollision(monster,projection * view * model);
 
     /*--------------------------DRAWING OBJ------------------*/
     return toReturn;
@@ -1155,6 +1162,11 @@ void Do_Movement()
     }
     if (keys[GLFW_KEY_B])
         std::cout<<camera.Position[0]<<"  "<<camera.Position[1]<<"  "<<camera.Position[2]<<"  "<<endl;
+
+    if (keys[GLFW_KEY_C])
+        enableCollision=true;
+    if (keys[GLFW_KEY_V])
+        enableCollision=false;
 }
 
 GLfloat lastX = 400, lastY = 300;
