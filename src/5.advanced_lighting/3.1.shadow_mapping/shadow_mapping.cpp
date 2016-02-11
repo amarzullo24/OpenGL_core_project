@@ -44,7 +44,7 @@ void initGrass();
 void initFlame();
 
 
-void checkTeleports(std::vector<glm::vec3> lightPositions);
+bool checkTeleports(std::vector<glm::vec3> lightPositions);
 
 
 
@@ -251,8 +251,8 @@ int main()
     std::vector<glm::vec3> lightPositions;
     lightPositions.push_back(glm::vec3(10.0f, 0.5f, 1.5f)); // back light
     lightPositions.push_back(glm::vec3(14.0f, 0.5f, -3.0f));
-    lightPositions.push_back(glm::vec3(13.0f, 0.5f, 1.0f));
-    lightPositions.push_back(glm::vec3(12.8f, 2.4f, -1.0f));
+    lightPositions.push_back(glm::vec3(14.0f, 0.5f, 1.0f));
+    lightPositions.push_back(glm::vec3(10.0f, 0.5f, -1.0f));
     lightPositions.push_back(glm::vec3(-0.173773  ,-0.515819 , -2.0192));
     lightPositions.push_back(glm::vec3(1.27708 , 4.18544 , 2.83903));
     lightPositions.push_back(glm::vec3(0.675843 , 4.02432  ,23.4425));
@@ -342,10 +342,10 @@ int main()
 
         // Check and call events
         glfwPollEvents();
-        Do_Movement();
 
+        if(!checkTeleports(lightPositions))
+            Do_Movement();
 
-        checkTeleports(lightPositions);
 
         glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -537,7 +537,7 @@ int main()
     return 0;
 }
 
-void checkTeleports(std::vector<glm::vec3> lightPositions)
+bool checkTeleports(std::vector<glm::vec3> lightPositions)
 {
     for(int i=0;i<lightPositions.size();i++)
         if(camera.Position[0]-lightPositions[i][0]<=0.4 &&
@@ -561,7 +561,9 @@ void checkTeleports(std::vector<glm::vec3> lightPositions)
                     camera.Position=teleport_room_position;
                 dt_zoom=0;
             }
+            return true;
         }
+    return false;
 }
 
 void initFloor1(){

@@ -137,7 +137,7 @@ private:
         front1.x = cos(glm::radians(this->Yaw)) * cos(glm::radians(this->Pitch));
 //        front1.y = sin(glm::radians(this->Pitch));
         front1.z = sin(glm::radians(this->Yaw)) * cos(glm::radians(this->Pitch));
-        this->FrontMy = glm::normalize(front);
+        this->FrontMy = glm::normalize(front1);
 
         // Also re-calculate the Right and Up vector
         this->Right = glm::normalize(glm::cross(this->Front, this->WorldUp));  // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
