@@ -84,6 +84,7 @@ GLuint flame_instanceVBO;
 
 Model* monster;
 Model* floor1;
+Model* logicFloor1;
 Model* grass;
 Model* fence;
 Model* moon;
@@ -228,6 +229,7 @@ int main()
 
     //    monster = new Model("resources/objects/nanosuit/nanosuit.obj");
     floor1 = new Model("resources/objects/floor1/house.obj");
+    logicFloor1 =new Model("resources/objects/floor1/house_base.obj");
     grass = new Model("resources/objects/grass/Grass-small.obj");
     fence = new Model("resources/objects/fence/fence.obj");
     moon = new Model("resources/objects/floor1/moon.obj");
@@ -673,7 +675,7 @@ bool detectModelCollision(){
     glm::mat4 model;
     model = glm::translate(model, glm::vec3(2.0f, FLOOR1_Y+1.1, 2.0f)); // Translate it down a bit so it's at the center of the scene
     //model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// It's a bit too big for our scene, so scale it down
-    bool toReturn=bulletDetectCollision(floor1,projection*view*model);
+    bool toReturn=bulletDetectCollision(logicFloor1,projection*view*model);
 
 
     /*--------------------------DRAWING OBJ------------------*/
